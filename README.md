@@ -1,0 +1,2 @@
+# APOTEK
+mesin kasir apotek
