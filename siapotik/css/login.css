@@ -1,0 +1,109 @@
+* {
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f3f4f6;
+}
+
+.logo img {
+    width: 150px;
+}
+
+.login-wrapper {
+    display: flex;
+    height: 100vh;
+}
+
+.login-left {
+    flex: 1;
+    background: #0f766e;
+    color: white;
+    padding: 60px;
+}
+
+.login-left h2 {
+    margin-top: 100px;
+}
+
+.login-right {
+    width: 420px;
+    background: white;
+    padding: 40px;
+}
+
+.login-right input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.login-right button {
+    width: 100%;
+    margin-top: 20px;
+    padding: 10px;
+    background: #0f766e;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+
+.container {
+    display: flex;
+    padding: 20px;
+}
+
+.sidebar {
+    width: 260px;
+    background: #0f766e;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.menu {
+    background: white;
+    color: black;
+    margin-top: 15px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.menu a {
+    display: block;
+    padding: 12px;
+    text-decoration: none;
+    color: black;
+}
+
+.menu a:hover {
+    background: #e5f3f1;
+}
+
+.content {
+    flex: 1;
+    background: white;
+    margin-left: 20px;
+    padding: 30px;
+    border-radius: 10px;
+}
+
+.profile-circle {
+    width: 90px;
+    height: 90px;
+    background: #0f766e;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 90px;
+    font-size: 30px;
+    margin: auto;
+}
+
+.logout {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+}
