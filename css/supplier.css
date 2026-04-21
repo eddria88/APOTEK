@@ -1,0 +1,570 @@
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-left: 220px;
+}
+
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px
+}
+
+.page-header h2 {
+    font-size: 22px;
+    font-weight: 700
+}
+
+.page-header p {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 4px
+}
+
+.btn-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    border: none;
+    background: var(--green);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .2s, transform .1s
+}
+
+.btn-add:hover {
+    background: var(--green-btn)
+}
+
+.btn-add:active {
+    transform: scale(.97)
+}
+
+/* ── TABLE CARD ── */
+.table-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden
+}
+
+/* Toolbar — sama seperti obat.php */
+.table-toolbar {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 14px;
+    flex: 1;
+    min-width: 220px;
+    transition: border-color .2s
+}
+
+.search-box:focus-within {
+    border-color: var(--green-light);
+    background: #fff
+}
+
+.search-box i {
+    color: var(--muted);
+    font-size: 13px
+}
+
+.search-box input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--text);
+    outline: none
+}
+
+.search-box input::placeholder {
+    color: #aab8aa
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto
+}
+
+.select-sm {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s
+}
+
+.select-sm:focus {
+    border-color: var(--green-light)
+}
+
+.btn-export {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s
+}
+
+.btn-export:hover {
+    border-color: var(--green-light);
+    color: var(--green);
+    background: var(--green-pale)
+}
+
+/* Table */
+table.dtable {
+    width: 100%;
+    border-collapse: collapse
+}
+
+.dtable thead th {
+    background: var(--bg);
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    border-bottom: 1px solid var(--border)
+}
+
+.dtable thead th.center {
+    text-align: center
+}
+
+.dtable tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+    vertical-align: middle
+}
+
+.dtable tbody tr:last-child td {
+    border-bottom: none
+}
+
+.dtable tbody tr:hover td {
+    background: #fafcfa
+}
+
+/* Supplier info cell */
+
+.sup-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--green-pale);
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+    border: 1.5px solid var(--border)
+}
+
+.td-name {
+    font-weight: 700;
+    color: var(--text)
+}
+
+.td-muted {
+    color: var(--muted);
+    font-size: 13px
+}
+
+.id-mono {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: monospace;
+    font-weight: 600
+}
+
+/* Status badge — sama seperti obat stok badge */
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700
+}
+
+.badge-aktif {
+    background: var(--green-pale);
+    color: var(--green)
+}
+
+.badge-nonaktif {
+    background: var(--red-pale);
+    color: var(--red)
+}
+
+.badge-dot-s {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%
+}
+
+.badge-aktif .badge-dot-s {
+    background: var(--green)
+}
+
+.badge-nonaktif .badge-dot-s {
+    background: var(--red)
+}
+
+/* Action buttons */
+.action-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px
+}
+
+.btn-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all .15s
+}
+
+.btn-icon.blue:hover {
+    background: var(--blue-pale);
+    border-color: var(--blue);
+    color: var(--blue)
+}
+
+.btn-icon.red:hover {
+    background: var(--red-pale);
+    border-color: var(--red);
+    color: var(--red)
+}
+
+/* Pagination — sama seperti obat.php */
+.table-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px
+}
+
+.table-footer p {
+    font-size: 12.5px;
+    color: var(--muted)
+}
+
+.pagination {
+    display: flex;
+    gap: 6px
+}
+
+.btn-page {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s
+}
+
+.btn-page:hover:not(:disabled) {
+    border-color: var(--green-light);
+    color: var(--green);
+    background: var(--green-pale)
+}
+
+.btn-page.active {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff
+}
+
+.btn-page:disabled {
+    opacity: .4;
+    cursor: not-allowed
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 56px;
+    color: var(--muted)
+}
+
+.empty-state i {
+    font-size: 40px;
+    color: #d0ddd0;
+    display: block;
+    margin-bottom: 12px
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .4);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    pointer-events: all
+}
+
+.modal-box {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 28px;
+    width: 460px;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .18);
+    transform: scale(.92) translateY(10px);
+    transition: transform .25s
+}
+
+.modal-overlay.show .modal-box {
+    transform: scale(1) translateY(0)
+}
+
+.modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px
+}
+
+.modal-head h3 {
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px
+}
+
+.modal-head h3 i {
+    color: var(--green)
+}
+
+.btn-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all .15s
+}
+
+.btn-close:hover {
+    background: var(--red-pale);
+    border-color: var(--red);
+    color: var(--red)
+}
+
+.fg2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px
+}
+
+.fg {
+    display: flex;
+    flex-direction: column;
+    gap: 5px
+}
+
+.fg.full {
+    grid-column: 1/-1
+}
+
+.fg label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted)
+}
+
+.fi,
+.fs {
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color .2s, background .2s;
+    width: 100%
+}
+
+.fi:focus,
+.fs:focus {
+    border-color: var(--green-light);
+    background: #fff
+}
+
+.fi::placeholder {
+    color: #aab8aa
+}
+
+.mfooter {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px
+}
+
+.mbtn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 10px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s
+}
+
+.mbtn.primary {
+    background: var(--green);
+    color: #fff
+}
+
+.mbtn.primary:hover {
+    background: var(--green-btn)
+}
+
+.mbtn.secondary {
+    background: var(--bg);
+    color: var(--text);
+    border: 1.5px solid var(--border)
+}
+
+.mbtn.secondary:hover {
+    background: var(--border)
+}
+
+.mbtn.danger {
+    background: var(--red);
+    color: #fff
+}
+
+.mbtn.danger:hover {
+    background: #c1121f
+}
+
+/* ── TOAST ── */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--green-btn);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 600;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: transform .3s, opacity .3s
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1
+}
+
+.toast.error {
+    background: var(--red)
+}
+
+::-webkit-scrollbar {
+    width: 5px
+}
+
+::-webkit-scrollbar-track {
+    background: transparent
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c8d8c8;
+    border-radius: 4px
+}
