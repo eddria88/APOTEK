@@ -7,7 +7,7 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-if($_SESSION['role'] != "admin" && $_SESSION['role'] != "owner"){
+if($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['role'] != "owner"){
     header("Location: ../dashboard.php");
     exit;
 }
@@ -154,13 +154,18 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
 
     <div class="app-body">
         <aside class="sidebar">
+            <?php if ($user['role'] != 'admin'): ?>
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <?php endif; ?>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link active" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
+            <?php if ($user['role'] != 'kasir'): ?>
             <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+            <?php endif; ?>
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
+            <?php if ($user['role'] == 'owner'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
@@ -168,6 +173,10 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+            <?php elseif ($user['role'] == 'kasir'): ?>
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+            <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
                 <strong><?= htmlspecialchars($user['nama_user']) ?></strong>
