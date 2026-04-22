@@ -35,6 +35,17 @@ if (isset($_POST['ajax_tambah'])) {
         echo json_encode(['success' => false, 'message' => 'Nama lengkap dan No. HP wajib diisi!']);
         exit;
     }
+
+    // Cek duplikat
+    $cek = mysqli_query($conn, "SELECT * FROM member WHERE nama_lengkap='$nama'");
+    if (mysqli_num_rows($cek) > 0) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Member sudah ada!'
+        ]);
+        exit;
+    }
+
     $ok = mysqli_query($conn, "INSERT INTO member (nama_lengkap,no_hp,alamat) VALUES ('$nama','$hp','$alamat')");
     $id = mysqli_insert_id($conn);
     echo json_encode($ok

@@ -30,6 +30,17 @@ if (isset($_POST['ajax_tambah'])) {
         echo json_encode(['success' => false, 'message' => 'Nama supplier wajib diisi!']);
         exit;
     }
+
+    // Cek duplikat
+    $cek = mysqli_query($conn, "SELECT * FROM supplier WHERE nama_supplier='$nama'");
+    if (mysqli_num_rows($cek) > 0) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Supplier sudah ada!'
+        ]);
+        exit;
+    }
+
     $ok  = mysqli_query($conn, "INSERT INTO supplier (nama_supplier,alamat,no_telp,email,status) VALUES ('$nama','$alamat','$telp','$email','$status')");
     $nid = mysqli_insert_id($conn);
     ob_end_clean();
