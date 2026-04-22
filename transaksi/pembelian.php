@@ -189,13 +189,18 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
     <div class="app-body">
         <aside class="sidebar">
+            <?php if ($user['role'] != 'admin'): ?>
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <?php endif; ?>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="../master/kategori.php"><i class="fas fa-tags"></i> Kategori</a>
+            <?php if ($user['role'] != 'kasir'): ?>
             <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+            <?php endif; ?>
             <a class="sb-link" href="../master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="../master/member.php"><i class="fas fa-user-friends"></i> Member</a>
+            <?php if ($user['role'] == 'owner'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
@@ -203,6 +208,10 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+            <?php elseif ($user['role'] == 'kasir'): ?>
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+            <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
                 <strong><?= htmlspecialchars($user['nama_user']) ?></strong>
