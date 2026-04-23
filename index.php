@@ -50,5 +50,3 @@ include "koneksi.php";
     </div>
 </body>
 </html>
-
-<!-- jadi allysa untuk tanda `?` itu adalah placeholder sehingga `username` apapun yang diketik akan diperlakukan sebagai data biasa, bukan bagian dari query. Jadi `' OR 1=1 #` tidak akan dieksekusi sebagai SQL jadi ga bisa bypass lagi -->
