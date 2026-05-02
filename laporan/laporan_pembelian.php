@@ -161,9 +161,7 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
             <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <a class="sb-link" href="../master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="../master/member.php"><i class="fas fa-user-friends"></i> Member</a>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+          
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link active" href="laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
