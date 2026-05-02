@@ -157,8 +157,13 @@ $pct_change = $pj_yesterday > 0 ? round((($pj_today_val - $pj_yesterday) / $pj_y
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <?php if ($user['role'] != 'admin'): ?>
+<<<<<<< HEAD
             <div class="sb-sec">Core</div>
             <a class="sb-link active" href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+=======
+                <div class="sb-sec">Core</div>
+                <a class="sb-link active" href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+>>>>>>> 8d09b546e690e945f8c9d996dca731ad8a4e7666
             <?php endif; ?>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="master/kategori.php"><i class="fas fa-tags"></i> Kategori</a>
@@ -168,6 +173,7 @@ $pct_change = $pj_yesterday > 0 ? round((($pj_today_val - $pj_yesterday) / $pj_y
             <a class="sb-link" href="master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="master/member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
+<<<<<<< HEAD
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <a class="sb-link" href="transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
@@ -175,6 +181,15 @@ $pct_change = $pj_yesterday > 0 ? round((($pj_today_val - $pj_yesterday) / $pj_y
             <a class="sb-link" href="laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+=======
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <a class="sb-link" href="transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <div class="sb-sec">Laporan</div>
+                <a class="sb-link" href="laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
+                <a class="sb-link" href="laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
+                <a class="sb-link" href="laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+>>>>>>> 8d09b546e690e945f8c9d996dca731ad8a4e7666
             <?php elseif ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>

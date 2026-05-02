@@ -16,34 +16,38 @@ $username  = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user      = mysqli_fetch_assoc($queryUser);
 
-$tanggal_awal  = $_GET['tanggal_awal']  ?? '';
-$tanggal_akhir = $_GET['tanggal_akhir'] ?? '';
-$search        = mysqli_real_escape_string($conn, $_GET['search'] ?? '');
+$tanggal_awal  = mysqli_real_escape_string($conn, $_GET['tanggal_awal']  ?? '');
+$tanggal_akhir = mysqli_real_escape_string($conn, $_GET['tanggal_akhir'] ?? '');
+$search        = mysqli_real_escape_string($conn, $_GET['search']        ?? '');
 
 $perPage = 10;
 $page    = max(1, (int)($_GET['page'] ?? 1));
 $offset  = ($page - 1) * $perPage;
 
-// Build WHERE
+function isValidDate($d) {
+    return preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && strtotime($d) !== false;
+}
+if (!isValidDate($tanggal_awal))  $tanggal_awal  = '';
+if (!isValidDate($tanggal_akhir)) $tanggal_akhir = '';
+
 $conditions = [];
-if (!empty($tanggal_awal) && !empty($tanggal_akhir)) {
+if ($tanggal_awal && $tanggal_akhir) {
     $conditions[] = "DATE(pj.tanggal) BETWEEN '$tanggal_awal' AND '$tanggal_akhir'";
-} elseif (!empty($tanggal_awal)) {
+} elseif ($tanggal_awal) {
     $conditions[] = "DATE(pj.tanggal) >= '$tanggal_awal'";
-} elseif (!empty($tanggal_akhir)) {
+} elseif ($tanggal_akhir) {
     $conditions[] = "DATE(pj.tanggal) <= '$tanggal_akhir'";
 }
 if (!empty($search)) {
-    $conditions[] = "(m.nama_member LIKE '%$search%' OR pj.id_penjualan LIKE '%$search%')";
+    $conditions[] = "(m.nama_lengkap LIKE '%$search%' OR pj.id_penjualan LIKE '%$search%')";
 }
 $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
-// Summary
 $summaryResult = mysqli_query($conn, "
     SELECT COUNT(*) as jumlah,
-           COALESCE(SUM(pj.total),0) as total_semua,
-           COALESCE(SUM(pj.bayar),0) as total_bayar,
-           COALESCE(SUM(pj.kembalian),0) as total_kembalian
+           COALESCE(SUM(pj.total),0)      as total_semua,
+           COALESCE(SUM(pj.bayar),0)      as total_bayar,
+           COALESCE(SUM(pj.kembalian),0)  as total_kembalian
     FROM penjualan pj
     LEFT JOIN member m ON pj.id_member = m.id_member
     $where
@@ -52,7 +56,6 @@ $summary   = mysqli_fetch_assoc($summaryResult);
 $totalRow  = (int)$summary['jumlah'];
 $totalPage = max(1, ceil($totalRow / $perPage));
 
-// Fetch halaman ini
 $query = mysqli_query($conn, "
     SELECT pj.*, COALESCE(m.nama_lengkap,'Umum') AS nama_member
     FROM penjualan pj
@@ -61,11 +64,9 @@ $query = mysqli_query($conn, "
     ORDER BY pj.tanggal DESC
     LIMIT $perPage OFFSET $offset
 ");
-
 $rows = [];
 while ($row = mysqli_fetch_assoc($query)) $rows[] = $row;
 
-// Fetch semua (untuk export)
 $queryAll = mysqli_query($conn, "
     SELECT pj.*, COALESCE(m.nama_lengkap,'Umum') AS nama_member
     FROM penjualan pj
@@ -78,7 +79,6 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
 ?>
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -91,7 +91,6 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
-
 <body>
 
     <nav class="topnav">
@@ -129,8 +128,9 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
             <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <a class="sb-link" href="../master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="../master/member.php"><i class="fas fa-user-friends"></i> Member</a>
-           
-           
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <div class="sb-sec">Laporan</div>
             <a class="sb-link active" href="laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
@@ -143,6 +143,7 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
 
         <div class="main-content">
 
+            <!-- Print header: muncul hanya saat print (via CSS @media print) -->
             <div class="print-header">
                 <h2>🌿 APOTEK — Laporan Penjualan</h2>
                 <p>
@@ -173,6 +174,7 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
                 </div>
             </div>
 
+            <!-- 4 Summary Cards -->
             <div class="summary-grid">
                 <div class="sum-card">
                     <div class="sum-icon blue"><i class="fas fa-cash-register"></i></div>
@@ -195,6 +197,13 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
                         <div class="sum-val" style="font-size:16px">Rp <?= number_format($summary['total_bayar'], 0, ',', '.') ?></div>
                     </div>
                 </div>
+                <div class="sum-card">
+                    <div class="sum-icon red"><i class="fas fa-coins"></i></div>
+                    <div>
+                        <div class="sum-label">Total Kembalian</div>
+                        <div class="sum-val" style="font-size:16px">Rp <?= number_format($summary['total_kembalian'], 0, ',', '.') ?></div>
+                    </div>
+                </div>
             </div>
 
             <div class="table-card">
@@ -202,10 +211,14 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
                     <div class="table-toolbar">
                         <div class="search-box">
                             <i class="fas fa-search"></i>
-                            <input type="text" name="search"
+                            <input
+                                type="text"
+                                name="search"
+                                id="searchInput"
                                 placeholder="Cari member, ID transaksi..."
                                 value="<?= htmlspecialchars($_GET['search'] ?? '') ?>"
-                                onchange="document.getElementById('ff').submit()">
+                                oninput="scheduleSearch()"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault();submitSearch();}">
                         </div>
                         <div class="toolbar-right">
                             <input type="date" name="tanggal_awal" class="date-inp" value="<?= htmlspecialchars($tanggal_awal) ?>" title="Dari tanggal">
@@ -251,15 +264,16 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
                                 $no = ($page - 1) * $perPage + 1;
                                 foreach ($rows as $row):
                                 ?>
-                                    <tr id="row-<?= $row['id_penjualan'] ?>">
+                                    <tr>
                                         <td class="td-mono"><?= $no++ ?></td>
                                         <td class="td-muted"><?= date('d M Y', strtotime($row['tanggal'])) ?></td>
-                                        <td><?php if (!empty($row['nama_member'])): ?>
+                                        <td>
+                                            <?php if (!empty($row['nama_member']) && $row['nama_member'] !== 'Umum'): ?>
                                                 <span style="display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:2px 10px;font-size:11.5px;font-weight:700">
                                                     <i class="fas fa-user-tag"></i> <?= htmlspecialchars($row['nama_member']) ?>
                                                 </span>
                                             <?php else: ?>
-                                                <span style="color:var(--muted);font-size:12px">—</span>
+                                                <span style="color:var(--muted);font-size:12px">Umum</span>
                                             <?php endif; ?>
                                         </td>
                                         <td class="td-right td-bold">Rp <?= number_format($row['total'], 0, ',', '.') ?></td>
@@ -292,116 +306,162 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
     <script>
         const allRows = <?= json_encode($allRows) ?>;
         const summaryData = {
-            jumlah: <?= (int)$summary['jumlah'] ?>,
-            total_semua: <?= (float)$summary['total_semua'] ?>,
-            total_bayar: <?= (float)$summary['total_bayar'] ?>,
+            jumlah         : <?= (int)$summary['jumlah'] ?>,
+            total_semua    : <?= (float)$summary['total_semua'] ?>,
+            total_bayar    : <?= (float)$summary['total_bayar'] ?>,
             total_kembalian: <?= (float)$summary['total_kembalian'] ?>
         };
         const periodeLabel = `<?= ($tanggal_awal && $tanggal_akhir)
-                                    ? date('d M Y', strtotime($tanggal_awal)) . ' s/d ' . date('d M Y', strtotime($tanggal_akhir))
-                                    : 'Semua Periode' ?>`;
+            ? date('d M Y', strtotime($tanggal_awal)) . ' s/d ' . date('d M Y', strtotime($tanggal_akhir))
+            : 'Semua Periode' ?>`;
+
+        // ── Search debounce ──
+        let searchTimer = null;
+        function scheduleSearch() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(submitSearch, 500);
+        }
+        function submitSearch() {
+            clearTimeout(searchTimer);
+            const form = document.getElementById('ff');
+            let pageInput = form.querySelector('input[name="page"]');
+            if (!pageInput) {
+                pageInput = document.createElement('input');
+                pageInput.type = 'hidden';
+                pageInput.name = 'page';
+                form.appendChild(pageInput);
+            }
+            pageInput.value = 1;
+            form.submit();
+        }
 
         function goPage(p) {
             const u = new URL(window.location.href);
             u.searchParams.set('page', p);
+            const searchVal = document.getElementById('searchInput')?.value ?? '';
+            if (searchVal) u.searchParams.set('search', searchVal);
             window.location.href = u.toString();
         }
 
         // ── PRINT RAPI ──
+        // Mengambil CSS langsung dari file laporan.css yang sudah ada,
+        // sehingga @media print di laporan.css otomatis aktif saat window.print() dipanggil.
         function printRapi() {
             const printHeader = document.querySelector('.print-header')?.outerHTML ?? '';
-            const pageHeader = document.querySelector('.page-header')?.outerHTML ?? '';
+            const pageHeader  = document.querySelector('.page-header')?.outerHTML  ?? '';
             const summaryGrid = document.querySelector('.summary-grid')?.outerHTML ?? '';
-            const tableHTML = document.querySelector('.table-card table')?.outerHTML ?? '';
+            const tableHTML   = document.querySelector('.table-card table')?.outerHTML ?? '';
+
+            // Ambil semua <link rel="stylesheet"> dari halaman ini dan teruskan ke window print
+            const styleLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+                .map(l => `<link rel="stylesheet" href="${l.href}">`)
+                .join('\n');
 
             const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <title>Laporan Penjualan — Apotek</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    ${styleLinks}
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-        :root {
-            --green:#2d6a4f; --green-pale:#d8f3dc;
-            --red:#e63946;   --red-pale:#fce4e6;
-            --blue:#2563eb;  --blue-pale:#dbeafe;
-            --amber:#d97706; --amber-pale:#fef3c7;
-            --muted:#6b7c6b; --border:#e2ebe2; --bg:#f4f6f3;
+        /* Override layout agar tidak ada sidebar/nav mempengaruhi print */
+        body { margin: 0; padding: 0; background: #fff; }
+        .topnav, .sidebar, nav, aside { display: none !important; }
+        .app-body { display: block !important; }
+        .main-content {
+            display: block !important;
+            margin: 0 !important;
+            padding: 14mm 12mm !important;
+            width: 100% !important;
         }
-        body { font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; color:#1a1a1a; background:#fff; padding:14mm 12mm; }
-
-        .print-header { text-align:center; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid #333; }
-        .print-header h2 { font-size:16px; font-weight:700; margin-bottom:3px; }
-        .print-header p  { font-size:11px; color:#555; }
-
-        .page-header { margin-bottom:12px; }
-        .page-header h2 { font-size:14px; font-weight:700; }
-        .page-header p  { font-size:11px; color:#666; margin-top:2px; }
-        .header-actions { display:none !important; }
-
+        /* Tampilkan print-header */
+        .print-header {
+            display: block !important;
+            text-align: center;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
+        }
+        .print-header h2 { font-size: 15px; font-weight: 700; margin: 0 0 3px; }
+        .print-header p  { font-size: 11px; color: #555; margin: 0; }
+        /* Sembunyikan elemen yang tidak perlu */
+        .table-toolbar, .table-footer, .header-actions,
+        .no-print, .pagination, .btn-action, .btn-bayar { display: none !important; }
+        /* Summary cards satu baris */
         .summary-grid {
-            display:flex !important; flex-direction:row !important;
-            flex-wrap:nowrap !important; gap:10px !important;
-            width:100% !important; margin-bottom:14px;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 10px !important;
+            width: 100% !important;
+            margin-bottom: 14px;
         }
         .sum-card {
-            flex:1 1 0 !important; min-width:0 !important;
-            border:1px solid #ccc; border-radius:8px; padding:10px 12px;
-            display:flex !important; align-items:center !important; gap:10px !important;
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            padding: 10px 12px !important;
+            border: 1px solid #ccc !important;
+            border-radius: 8px !important;
+            box-shadow: none !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
         }
-        .sum-icon { width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
-        .sum-icon.blue  { background:#dbeafe; color:#1e40af; }
-        .sum-icon.green { background:#d1fae5; color:#065f46; }
-        .sum-icon.amber { background:#fef3c7; color:#92400e; }
-        .sum-icon.red   { background:#fee2e2; color:#991b1b; }
-        .sum-label { font-size:10px; color:#666; }
-        .sum-val   { font-size:13px; font-weight:800; margin-top:2px; }
-
-        .table-card { border:1px solid #ccc; border-radius:8px; overflow:hidden; width:100%; }
-        .table-toolbar, .table-footer, .no-print { display:none !important; }
-
-        table.dtable { width:100%; border-collapse:collapse; table-layout:fixed; font-size:10.5px; }
+        .sum-icon { width: 34px !important; height: 34px !important; font-size: 15px !important; border-radius: 8px !important; flex-shrink: 0; display:flex; align-items:center; justify-content:center; }
+        .sum-icon.blue  { background: #dbeafe !important; color: #1e40af !important; }
+        .sum-icon.green { background: #d1fae5 !important; color: #065f46 !important; }
+        .sum-icon.amber { background: #fef3c7 !important; color: #92400e !important; }
+        .sum-icon.red   { background: #fee2e2 !important; color: #991b1b !important; }
+        .sum-label { font-size: 10px; color: #666; }
+        .sum-val   { font-size: 13px; font-weight: 800; margin-top: 2px; }
+        /* Tabel */
+        .table-card { border: 1px solid #ccc !important; border-radius: 8px !important; overflow: hidden; box-shadow: none !important; }
+        table.dtable { width: 100% !important; border-collapse: collapse !important; font-size: 10.5px !important; }
         .dtable thead th {
-            background:#e8f5e9; color:#111; padding:7px 8px;
-            font-size:10px; font-weight:700; border:1px solid #bbb;
-            text-align:left; text-transform:uppercase; letter-spacing:0.3px;
+            background: #e8f5e9 !important; color: #111 !important;
+            padding: 7px 8px !important; font-size: 10px !important;
+            font-weight: 700 !important; border: 1px solid #bbb !important;
+            text-align: left; text-transform: uppercase;
         }
-        .dtable thead th.right  { text-align:right; }
-        .dtable thead th.center { text-align:center; }
-        .dtable tbody td { padding:6px 8px; border:1px solid #ddd; vertical-align:middle; word-break:break-word; }
-        .dtable tbody tr:nth-child(even) td { background:#f7fbf7; }
-
-        .td-right  { text-align:right; }
-        .td-center { text-align:center; }
-        .td-bold   { font-weight:700; }
-        .td-muted  { color:#666; }
-        .td-mono   { font-family:monospace; font-size:10px; color:#666; }
-
-        @page { size:A4 portrait; margin:0; }
+        .dtable thead th.right { text-align: right; }
+        .dtable tbody td { padding: 6px 8px !important; border: 1px solid #ddd !important; font-size: 10px !important; vertical-align: middle; }
+        .dtable tbody tr:nth-child(even) td { background: #f7fbf7 !important; }
+        .td-right  { text-align: right !important; }
+        .td-bold   { font-weight: 700 !important; }
+        .td-muted  { color: #666 !important; }
+        .td-mono   { font-family: monospace !important; font-size: 9px !important; color: #666 !important; }
+        /* Page header */
+        .page-header h2 { font-size: 14px; font-weight: 700; }
+        .page-header p  { font-size: 11px; color: #666; margin-top: 2px; }
+        @page { size: A4 portrait; margin: 0; }
         @media print {
-            body { padding:14mm 12mm; }
-            thead { display:table-header-group; }
-            tr    { page-break-inside:avoid; }
-            * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            thead { display: table-header-group; }
+            tr    { page-break-inside: avoid; }
         }
     </style>
 </head>
 <body>
-    ${printHeader}
-    ${pageHeader}
-    ${summaryGrid}
-    <div class="table-card">${tableHTML}</div>
-    <script>
-        document.querySelectorAll('.header-actions,.table-toolbar,.table-footer,.no-print').forEach(el=>el.remove());
-        window.onload = function() {
-            setTimeout(function() {
-                window.print();
-                window.onafterprint = function() { window.close(); };
-            }, 700);
-        };
-    <\/script>
+<div class="app-body">
+    <div class="main-content">
+        ${printHeader}
+        ${pageHeader}
+        ${summaryGrid}
+        <div class="table-card">${tableHTML}</div>
+    </div>
+</div>
+<script>
+    // Bersihkan elemen tidak perlu setelah render
+    document.querySelectorAll('.header-actions,.table-toolbar,.table-footer,.no-print,.btn-bayar,.pagination').forEach(el => el.remove());
+    window.onload = function () {
+        setTimeout(function () {
+            window.print();
+            window.onafterprint = function () { window.close(); };
+        }, 800);
+    };
+<\/script>
 </body>
 </html>`;
 
@@ -413,35 +473,22 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
 
         // ── EXPORT PDF ──
         function exportPDF() {
-            const {
-                jsPDF
-            } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
 
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16); doc.setFont('helvetica','bold');
             doc.text('APOTEK — Laporan Penjualan', 14, 16);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(100);
+            doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(100);
             doc.text(`Periode: ${periodeLabel}`, 14, 23);
             doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}`, 14, 29);
-            doc.setTextColor(0);
-            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0); doc.setFont('helvetica','bold');
             doc.text(`Total Transaksi: ${summaryData.jumlah}`, 14, 38);
             doc.text(`Total Penjualan: Rp ${fmt(summaryData.total_semua)}`, 80, 38);
+            doc.text(`Total Kembalian: Rp ${fmt(summaryData.total_kembalian)}`, 14, 44);
 
             const tableData = allRows.map((row, i) => [
                 i + 1,
-                new Date(row.tanggal).toLocaleDateString('id-ID', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                }),
+                new Date(row.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}),
                 row.nama_member || 'Umum',
                 `Rp ${fmt(row.total)}`,
                 `Rp ${fmt(row.bayar)}`,
@@ -449,70 +496,25 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
             ]);
 
             doc.autoTable({
-                head: [
-                    ['No', 'Tanggal', 'Member', 'Total', 'Bayar', 'Kembalian']
-                ],
+                head: [['No','Tanggal','Member','Total','Bayar','Kembalian']],
                 body: tableData,
-                startY: 44,
-                styles: {
-                    fontSize: 9,
-                    cellPadding: 3
-                },
-                headStyles: {
-                    fillColor: [45, 106, 79],
-                    textColor: 255,
-                    fontStyle: 'bold'
-                },
-                alternateRowStyles: {
-                    fillColor: [244, 246, 243]
-                },
+                startY: 50,
+                styles: { fontSize:9, cellPadding:3 },
+                headStyles: { fillColor:[45,106,79], textColor:255, fontStyle:'bold' },
+                alternateRowStyles: { fillColor:[244,246,243] },
                 columnStyles: {
-                    0: {
-                        halign: 'center',
-                        cellWidth: 12
-                    },
-                    3: {
-                        halign: 'right',
-                        fontStyle: 'bold'
-                    },
-                    4: {
-                        halign: 'right'
-                    },
-                    5: {
-                        halign: 'right'
-                    }
+                    0:{ halign:'center', cellWidth:12 },
+                    3:{ halign:'right', fontStyle:'bold' },
+                    4:{ halign:'right' },
+                    5:{ halign:'right' }
                 },
-                foot: [
-                    [{
-                            content: 'TOTAL',
-                            colSpan: 3,
-                            styles: {
-                                halign: 'right',
-                                fontStyle: 'bold',
-                                fillColor: [216, 243, 220]
-                            }
-                        },
-                        {
-                            content: `Rp ${fmt(summaryData.total_semua)}`,
-                            styles: {
-                                halign: 'right',
-                                fontStyle: 'bold',
-                                fillColor: [216, 243, 220]
-                            }
-                        },
-                        {
-                            content: '',
-                            colSpan: 2,
-                            styles: {
-                                fillColor: [216, 243, 220]
-                            }
-                        }
-                    ]
-                ],
-                footStyles: {
-                    fillColor: [216, 243, 220],
-                    textColor: [45, 106, 79]
-                }
+                foot: [[
+                    { content:'TOTAL', colSpan:3, styles:{ halign:'right', fontStyle:'bold', fillColor:[216,243,220] } },
+                    { content:`Rp ${fmt(summaryData.total_semua)}`, styles:{ halign:'right', fontStyle:'bold', fillColor:[216,243,220] } },
+                    { content:`Rp ${fmt(summaryData.total_bayar)}`, styles:{ halign:'right', fillColor:[216,243,220] } },
+                    { content:`Rp ${fmt(summaryData.total_kembalian)}`, styles:{ halign:'right', fillColor:[216,243,220] } }
+                ]],
+                footStyles: { fillColor:[216,243,220], textColor:[45,106,79] }
             });
 
             doc.save(`laporan_penjualan_${new Date().toISOString().slice(0,10)}.pdf`);
@@ -521,27 +523,23 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
 
         // ── EXPORT CSV ──
         function exportCSV() {
-            const headers = ['No', 'Tanggal', 'Member', 'Total', 'Bayar', 'Kembalian'];
+            const headers = ['No','Tanggal','Member','Total','Bayar','Kembalian'];
             const csvRows = allRows.map((row, i) => [
                 i + 1,
                 new Date(row.tanggal).toLocaleDateString('id-ID'),
                 row.nama_member || 'Umum',
                 row.total, row.bayar, row.kembalian
             ]);
-            csvRows.push(['', '', 'TOTAL', summaryData.total_semua, '', '']);
+            csvRows.push(['','','TOTAL', summaryData.total_semua, summaryData.total_bayar, summaryData.total_kembalian]);
             const csv = [headers, ...csvRows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([csv], {
-                type: 'text/csv;charset=utf-8;'
-            }));
+            a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
             a.download = `laporan_penjualan_${new Date().toISOString().slice(0,10)}.csv`;
             a.click();
             showToast('CSV berhasil didownload!');
         }
 
-        function fmt(n) {
-            return Number(n).toLocaleString('id-ID');
-        }
+        function fmt(n) { return Number(n).toLocaleString('id-ID'); }
 
         function showToast(msg, error = false) {
             const t = document.getElementById('toast');
@@ -560,5 +558,4 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
         });
     </script>
 </body>
-
 </html>
