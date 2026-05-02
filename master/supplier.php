@@ -179,7 +179,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
 
         <!-- SIDEBAR -->
         <aside class="sidebar">
-<<<<<<< HEAD
+
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <div class="sb-sec">Master Data</div>
@@ -196,7 +196,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
             <?php if ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-=======
+
             <?php if ($user['role'] != 'admin'): ?>
                 <div class="sb-sec">Core</div>
                 <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
@@ -219,7 +219,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
             <?php elseif ($user['role'] == 'kasir'): ?>
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
->>>>>>> bd16fe67f3d2c39d24208074f6ecd7987812c103
+
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>

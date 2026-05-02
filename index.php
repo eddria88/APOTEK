@@ -49,12 +49,12 @@ include "koneksi.php";
                 mysqli_stmt_close($stmt);
             }
             ?>
-<<<<<<< HEAD
+
         </div>
     </div>
 </body>
 </html>
-=======
+
 
             <form method="POST" id="loginForm" autocomplete="off">
 
@@ -100,4 +100,4 @@ include "koneksi.php";
 </body>
 
 </html>
->>>>>>> bd16fe67f3d2c39d24208074f6ecd7987812c103
+

@@ -173,7 +173,6 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link active" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-<<<<<<< HEAD
             
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
@@ -182,7 +181,7 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             <?php elseif ($user['role'] == 'kasir'): ?>
             
             
-=======
+
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
                 <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
@@ -193,7 +192,7 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             <?php elseif ($user['role'] == 'kasir'): ?>
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
->>>>>>> bd16fe67f3d2c39d24208074f6ecd7987812c103
+
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>

@@ -162,15 +162,15 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
 
     <div class="app-body">
         <aside class="sidebar">
-<<<<<<< HEAD
+
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-=======
+
             <?php if ($user['role'] != 'admin'): ?>
                 <div class="sb-sec">Core</div>
                 <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <?php endif; ?>
->>>>>>> bd16fe67f3d2c39d24208074f6ecd7987812c103
+
             <div class="sb-sec">Master Data</div>
             <a class="sb-link active" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
@@ -178,7 +178,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
             <?php endif; ?>
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
-<<<<<<< HEAD
+
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
@@ -186,7 +186,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
             <?php if ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-=======
+
             <?php if ($user['role'] == 'owner'): ?>
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
@@ -198,7 +198,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
             <?php elseif ($user['role'] == 'kasir'): ?>
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
->>>>>>> bd16fe67f3d2c39d24208074f6ecd7987812c103
+
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>

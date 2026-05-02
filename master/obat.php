@@ -287,15 +287,15 @@ $dataResult = mysqli_query(
 
     <div class="app-body">
         <aside class="sidebar">
-<<<<<<< HEAD
+
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-=======
+
             <?php if ($user['role'] != 'admin'): ?>
                 <div class="sb-sec">Core</div>
                 <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <?php endif; ?>
->>>>>>> bd16fe67f3d2c39d24208074f6ecd7987812c103
+
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
@@ -304,12 +304,12 @@ $dataResult = mysqli_query(
             <a class="sb-link active" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-<<<<<<< HEAD
+
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-=======
+
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
                 <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
@@ -317,7 +317,7 @@ $dataResult = mysqli_query(
                 <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
                 <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
                 <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
->>>>>>> bd16fe67f3d2c39d24208074f6ecd7987812c103
+
             <?php elseif ($user['role'] == 'kasir'): ?>
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
