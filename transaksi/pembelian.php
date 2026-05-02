@@ -15,6 +15,10 @@ if ($_SESSION['role'] != "gudang" && $_SESSION['role'] != "owner") {
 $username = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user = mysqli_fetch_assoc($queryUser);
+if ($user['role'] === 'owner') {
+    header('Location: ../dashboard.php');
+    exit;
+}
 
 if (isset($_GET['get_batch'])) {
 
@@ -189,10 +193,8 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
     <div class="app-body">
         <aside class="sidebar">
-            <?php if ($user['role'] != 'admin'): ?>
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <?php endif; ?>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="../master/kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>

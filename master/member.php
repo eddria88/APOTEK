@@ -15,6 +15,14 @@ if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['r
 $username  = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user      = mysqli_fetch_assoc($queryUser);
+$isOwner   = $user['role'] === 'owner';
+
+if ($isOwner && $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    (isset($_POST['ajax_tambah']) || isset($_POST['ajax_edit']) || isset($_POST['ajax_hapus']))) {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'Owner tidak diperbolehkan melakukan input.']);
+    exit;
+}
 
 // Pastikan tabel member tersedia
 mysqli_query($conn, "CREATE TABLE IF NOT EXISTS member (
@@ -148,28 +156,24 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
 
     <div class="app-body">
         <aside class="sidebar">
-            <?php if ($user['role'] != 'admin'): ?>
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <?php endif; ?>
             <div class="sb-sec">Master Data</div>
-            <a class="sb-link active" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
+            <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
             <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
-            <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
+            <a class="sb-link active" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+            
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+            
+            
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -184,14 +188,11 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                     <h2>Data Member</h2>
                     <p>Kelola data member apotek</p>
                 </div>
-                <button class="btn-add" onclick="openModal('m-tambah')">
-                    <i class="fas fa-plus"></i> Tambah Member
-                </button>
-            </div>
-
-            <div class="table-card">
-                <form method="GET" id="ff">
-                    <div class="table-toolbar">
+                    <?php if (!$isOwner): ?>
+                    <button class="btn-add" onclick="openModal('m-tambah')">
+                        <i class="fas fa-plus"></i> Tambah Member
+                    </button>
+                    <?php endif; ?>
                         <div class="search-box">
                             <i class="fas fa-search"></i>
                             <input type="text" name="search"
@@ -216,13 +217,13 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                                 <th>No. HP</th>
                                 <th>Alamat</th>
                                 <th>Terdaftar</th>
-                                <th class="center">Aksi</th>
+                                <?php if (!$isOwner): ?><th class="center">Aksi</th><?php endif; ?>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($members)): ?>
                                 <tr>
-                                    <td colspan="6">
+                                    <td colspan="<?= $isOwner ? 5 : 6 ?>">
                                         <div class="empty-state">
                                             <i class="fas fa-user-friends"></i>
                                             <p>Tidak ada member ditemukan</p>
@@ -242,6 +243,7 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                                         <td class="td-muted"><?= htmlspecialchars($m['no_hp']) ?></td>
                                         <td class="td-muted"><?= htmlspecialchars($m['alamat'] ?: '—') ?></td>
                                         <td class="td-muted"><?= $tgl ?></td>
+                                        <?php if (!$isOwner): ?>
                                         <td>
                                             <div class="action-cell">
                                                 <button class="btn-icon blue" title="Edit"
@@ -254,6 +256,7 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                                                 </button>
                                             </div>
                                         </td>
+                                        <?php endif; ?>
                                     </tr>
                             <?php endforeach;
                             endif; ?>

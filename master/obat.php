@@ -15,6 +15,14 @@ if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['r
 $username = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user = mysqli_fetch_assoc($queryUser);
+$isOwner = $user['role'] === 'owner';
+
+if ($isOwner && $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    (isset($_POST['ajax_tambah']) || isset($_POST['ajax_edit']) || isset($_POST['ajax_hapus']) || isset($_POST['ajax_hapus_gambar']))) {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'Owner tidak diperbolehkan melakukan input.']);
+    exit;
+}
 
 $harga_jual   = (float) ($_POST['harga_jual'] ?? 0);
 $stok         = (int)   ($_POST['stok'] ?? 0);
@@ -279,10 +287,8 @@ $dataResult = mysqli_query(
 
     <div class="app-body">
         <aside class="sidebar">
-            <?php if ($user['role'] != 'admin'): ?>
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <?php endif; ?>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
@@ -291,9 +297,6 @@ $dataResult = mysqli_query(
             <a class="sb-link active" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
@@ -314,9 +317,11 @@ $dataResult = mysqli_query(
                     <h2>Data Obat</h2>
                     <p>Kelola data obat dan produk apotek</p>
                 </div>
+                <?php if (!$isOwner): ?>
                 <button class="btn-add" onclick="openModal('m-tambah')">
                     <i class="fas fa-plus"></i> Tambah Obat
                 </button>
+                <?php endif; ?>
             </div>
 
             <div class="table-card">
@@ -353,7 +358,7 @@ $dataResult = mysqli_query(
                                 <th>Kategori</th>
                                 <th>Harga Jual</th>
                                 <th>Stok</th>
-                                <th class="center">Aksi</th>
+                                <?php if (!$isOwner): ?><th class="center">Aksi</th><?php endif; ?>
                             </tr>
                         </thead>
                         <tbody>
@@ -372,7 +377,7 @@ $dataResult = mysqli_query(
                             if (mysqli_num_rows($dataResult) === 0):
                             ?>
                                 <tr>
-                                    <td colspan="6">
+                                    <td colspan="<?= $isOwner ? 5 : 6 ?>">
                                         <div class="empty-state"><i class="fas fa-pills"></i>
                                             <p>Tidak ada data obat ditemukan</p>
                                         </div>
@@ -410,6 +415,7 @@ $dataResult = mysqli_query(
                                         <td><span class="badge-kat <?= $badgeCls ?>"><?= htmlspecialchars($row['nama_kategori'] ?? '—') ?></span></td>
                                         <td class="price-sell">Rp <?= number_format($row['harga_jual'], 0, ',', '.') ?></td>
                                         <td><span class="stok-badge <?= $stokCls ?>"><?= $stok ?></span></td>
+                                        <?php if (!$isOwner): ?>
                                         <td>
                                             <div class="action-cell">
                                                 <button class="btn-icon blue" title="Edit" onclick="openEdit(<?= $row['id_obat'] ?>)">
@@ -420,6 +426,7 @@ $dataResult = mysqli_query(
                                                 </button>
                                             </div>
                                         </td>
+                                        <?php endif; ?>
                                     </tr>
                             <?php endwhile;
                             endif; ?>

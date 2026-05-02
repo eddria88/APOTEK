@@ -132,7 +132,7 @@ $pct_change = $pj_yesterday > 0 ? round((($pj_today_val - $pj_yesterday) / $pj_y
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
-            <span class="current">Dashoard</span>
+            <span class="current">Dashboard</span>
         </div>
         <div class="topnav-right">
             <div class="user-info" class="ddwrap" id="ddwrap" onclick="toggleDropdown()">
@@ -156,10 +156,8 @@ $pct_change = $pj_yesterday > 0 ? round((($pj_today_val - $pj_yesterday) / $pj_y
     <div class="app-body">
         <!-- SIDEBAR -->
         <aside class="sidebar">
-            <?php if ($user['role'] != 'admin'): ?>
             <div class="sb-sec">Core</div>
             <a class="sb-link active" href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <?php endif; ?>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="master/kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
@@ -168,9 +166,6 @@ $pct_change = $pj_yesterday > 0 ? round((($pj_today_val - $pj_yesterday) / $pj_y
             <a class="sb-link" href="master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="master/member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
