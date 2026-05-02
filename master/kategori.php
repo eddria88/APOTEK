@@ -15,14 +15,6 @@ if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['r
 $username = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user = mysqli_fetch_assoc($queryUser);
-$isOwner = $user['role'] === 'owner';
-
-if ($isOwner && $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    (isset($_POST['ajax_tambah']) || isset($_POST['ajax_edit']) || isset($_POST['ajax_hapus']))) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Owner tidak diperbolehkan melakukan input.']);
-    exit;
-}
 
 // AJAX: Tambah
 // AJAX: Tambah
@@ -162,15 +154,10 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
 
     <div class="app-body">
         <aside class="sidebar">
-
-            <div class="sb-sec">Core</div>
-            <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-
             <?php if ($user['role'] != 'admin'): ?>
                 <div class="sb-sec">Core</div>
                 <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <?php endif; ?>
-
             <div class="sb-sec">Master Data</div>
             <a class="sb-link active" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
@@ -178,15 +165,6 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
             <?php endif; ?>
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
-
-            <div class="sb-sec">Laporan</div>
-            <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-            <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-            <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-            <?php if ($user['role'] == 'kasir'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-
             <?php if ($user['role'] == 'owner'): ?>
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
@@ -198,7 +176,6 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
             <?php elseif ($user['role'] == 'kasir'): ?>
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -212,11 +189,9 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                     <h2>Kategori Obat</h2>
                     <p>Kelola kategori produk apotek</p>
                 </div>
-                <?php if (!$isOwner): ?>
                 <button class="btn-add" onclick="openTambah()">
                     <i class="fas fa-plus"></i> Tambah Kategori
                 </button>
-                <?php endif; ?>
             </div>
 
             <div class="category-grid" id="cat-grid">
@@ -244,7 +219,6 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                     $ci++;
                 ?>
                     <div class="category-card" id="card-<?= $k['id_kategori'] ?>">
-                        <?php if (!$isOwner): ?>
                         <div class="card-actions">
                             <button class="cact edit" title="Edit"
                                 onclick="openEdit(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
@@ -255,7 +229,6 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
-                        <?php endif; ?>
                         <div class="cat-icon-wrap <?= $color ?>"><i class="fas <?= $icon ?>"></i></div>
                         <div class="cat-name"><?= htmlspecialchars($k['nama_kategori']) ?></div>
                         <div class="cat-count"><?= $k['jumlah_produk'] ?> Produk</div>
@@ -263,13 +236,11 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                 <?php endforeach; ?>
 
                 <!-- Card Tambah Baru -->
-                <?php if (!$isOwner): ?>
                 <div class="category-card add-card" onclick="openTambah()">
                     <div class="cat-icon-wrap gray"><i class="fas fa-plus"></i></div>
                     <div class="cat-name">Tambah Baru</div>
                     <div class="cat-count">Buat kategori baru</div>
                 </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>

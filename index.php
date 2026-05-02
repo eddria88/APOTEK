@@ -50,12 +50,6 @@ include "koneksi.php";
             }
             ?>
 
-        </div>
-    </div>
-</body>
-</html>
-
-
             <form method="POST" id="loginForm" autocomplete="off">
 
                 <!-- Username -->
@@ -100,4 +94,3 @@ include "koneksi.php";
 </body>
 
 </html>
-
