@@ -7,22 +7,20 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['role'] != "owner") {
+if($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['role'] != "owner"){
     header("Location: ../dashboard.php");
+    exit;
+}
+
+if ($_SESSION['role'] == "owner" && (isset($_POST['ajax_tambah']) || isset($_POST['ajax_edit']) || isset($_POST['ajax_hapus']))) {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'Owner tidak berhak mengubah data.']);
     exit;
 }
 
 $username = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user = mysqli_fetch_assoc($queryUser);
-$isOwner = $user['role'] === 'owner';
-
-if ($isOwner && $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    (isset($_POST['ajax_tambah']) || isset($_POST['ajax_edit']) || isset($_POST['ajax_hapus']))) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Owner tidak diperbolehkan melakukan input.']);
-    exit;
-}
 
 // AJAX: Tambah
 // AJAX: Tambah
@@ -135,7 +133,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
     <!-- Navigation -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -162,43 +160,23 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
 
     <div class="app-body">
         <aside class="sidebar">
-
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-
-            <?php if ($user['role'] != 'admin'): ?>
-                <div class="sb-sec">Core</div>
-                <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <?php endif; ?>
-
             <div class="sb-sec">Master Data</div>
             <a class="sb-link active" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
-                <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+            <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
-
+            <?php if ($user['role'] == 'owner'): ?>
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-            <?php if ($user['role'] == 'kasir'): ?>
+            <?php elseif ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-
-            <?php if ($user['role'] == 'owner'): ?>
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-                <div class="sb-sec">Laporan</div>
-                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-            <?php elseif ($user['role'] == 'kasir'): ?>
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -212,7 +190,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                     <h2>Kategori Obat</h2>
                     <p>Kelola kategori produk apotek</p>
                 </div>
-                <?php if (!$isOwner): ?>
+                <?php if ($user['role'] != 'owner'): ?>
                 <button class="btn-add" onclick="openTambah()">
                     <i class="fas fa-plus"></i> Tambah Kategori
                 </button>
@@ -244,8 +222,8 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                     $ci++;
                 ?>
                     <div class="category-card" id="card-<?= $k['id_kategori'] ?>">
-                        <?php if (!$isOwner): ?>
-                        <div class="card-actions">
+                        <?php if ($user['role'] != 'owner'): ?>
+                    <div class="card-actions">
                             <button class="cact edit" title="Edit"
                                 onclick="openEdit(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
                                 <i class="fas fa-edit"></i>
@@ -255,7 +233,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
-                        <?php endif; ?>
+                    <?php endif; ?>
                         <div class="cat-icon-wrap <?= $color ?>"><i class="fas <?= $icon ?>"></i></div>
                         <div class="cat-name"><?= htmlspecialchars($k['nama_kategori']) ?></div>
                         <div class="cat-count"><?= $k['jumlah_produk'] ?> Produk</div>
@@ -263,7 +241,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                 <?php endforeach; ?>
 
                 <!-- Card Tambah Baru -->
-                <?php if (!$isOwner): ?>
+                <?php if ($user['role'] != 'owner'): ?>
                 <div class="category-card add-card" onclick="openTambah()">
                     <div class="cat-icon-wrap gray"><i class="fas fa-plus"></i></div>
                     <div class="cat-name">Tambah Baru</div>

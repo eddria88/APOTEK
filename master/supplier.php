@@ -15,14 +15,6 @@ if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "owner") {
 $username  = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user      = mysqli_fetch_assoc($queryUser);
-$isOwner   = $user['role'] === 'owner';
-
-if ($isOwner && $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    (isset($_POST['ajax_tambah']) || isset($_POST['ajax_edit']) || isset($_POST['ajax_hapus']))) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Owner tidak diperbolehkan melakukan input.']);
-    exit;
-}
 
 // AJAX: Tambah
 if (isset($_POST['ajax_tambah'])) {
@@ -150,7 +142,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
     <!-- TOP NAV -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -179,9 +171,10 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
 
         <!-- SIDEBAR -->
         <aside class="sidebar">
-
+              <?php if ($user['role'] != 'admin'): ?>
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <?php endif; ?>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
@@ -189,37 +182,17 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
             <?php endif; ?>
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
+            <?php if ($user['role'] == 'owner'): ?>
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-            <?php if ($user['role'] == 'kasir'): ?>
+            <?php elseif ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-
-            <?php if ($user['role'] != 'admin'): ?>
-                <div class="sb-sec">Core</div>
-                <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <?php endif; ?>
-            <div class="sb-sec">Master Data</div>
-            <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
-            <?php if ($user['role'] != 'kasir'): ?>
-                <a class="sb-link active" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
-            <?php endif; ?>
-            <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
-            <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
-            <?php if ($user['role'] == 'owner'): ?>
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-                <div class="sb-sec">Laporan</div>
-                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-            <?php elseif ($user['role'] == 'kasir'): ?>
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -235,11 +208,9 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
                     <h2>Data Supplier</h2>
                     <p>Kelola informasi pemasok obat</p>
                 </div>
-                <?php if (!$isOwner): ?>
                 <button class="btn-add" onclick="openTambah()">
                     <i class="fas fa-plus"></i> Tambah Supplier
                 </button>
-                <?php endif; ?>
             </div>
 
             <!-- TABLE CARD -->
@@ -278,7 +249,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
                                 <th>Telepon</th>
                                 <th>Email</th>
                                 <th>Status</th>
-                                <?php if (!$isOwner): ?><th class="center">Aksi</th><?php endif; ?>
+                                <th class="center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tbody">
@@ -287,7 +258,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
                             while ($row = mysqli_fetch_assoc($dataResult)) $rows[] = $row;
                             if (!$rows): ?>
                                 <tr>
-                                    <td colspan="<?= $isOwner ? 6 : 7 ?>">
+                                    <td colspan="7">
                                         <div class="empty-state">
                                             <i class="fas fa-truck"></i>
                                             <p>Belum ada data supplier ditemukan</p>
@@ -313,7 +284,6 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
                                                 <span class="badge-dot-s"></span><?= $status ?>
                                             </span>
                                         </td>
-                                        <?php if (!$isOwner): ?>
                                         <td>
                                             <div class="action-cell">
                                                 <button class="btn-icon blue" title="Edit" onclick="openEdit(<?= $row['id_supplier'] ?>)">
@@ -324,7 +294,6 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
                                                 </button>
                                             </div>
                                         </td>
-                                        <?php endif; ?>
                                     </tr>
                             <?php endforeach;
                             endif; ?>

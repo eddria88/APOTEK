@@ -128,11 +128,11 @@ $pct_change = $pj_yesterday > 0 ? round((($pj_today_val - $pj_yesterday) / $pj_y
     <!-- TOP NAV -->
     <nav class="topnav">
         <a href="dashboard.php" class="sb-brand">
-            <img src="uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
+            <img src="uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
-            <span class="current">Dashboard</span>
+            <span class="current">Dashoard</span>
         </div>
         <div class="topnav-right">
             <div class="user-info" class="ddwrap" id="ddwrap" onclick="toggleDropdown()">
@@ -156,40 +156,28 @@ $pct_change = $pj_yesterday > 0 ? round((($pj_today_val - $pj_yesterday) / $pj_y
     <div class="app-body">
         <!-- SIDEBAR -->
         <aside class="sidebar">
-
+            <?php if ($user['role'] != 'admin'): ?>
             <div class="sb-sec">Core</div>
             <a class="sb-link active" href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-
-            <?php if ($user['role'] != 'admin'): ?>
-                <div class="sb-sec">Core</div>
-                <a class="sb-link active" href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <?php endif; ?>
-
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="master/kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
-                <a class="sb-link" href="master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+            <a class="sb-link" href="master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
             <a class="sb-link" href="master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="master/member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+            <a class="sb-link" href="transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-                <a class="sb-link" href="transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-                <div class="sb-sec">Laporan</div>
-                <a class="sb-link" href="laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-                <a class="sb-link" href="laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-                <a class="sb-link" href="laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-
             <?php elseif ($user['role'] == 'kasir'): ?>
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
