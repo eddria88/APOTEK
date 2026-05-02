@@ -96,7 +96,7 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
 
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height:125px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>

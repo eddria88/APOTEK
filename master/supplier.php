@@ -150,7 +150,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
     <!-- TOP NAV -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -179,6 +179,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
 
         <!-- SIDEBAR -->
         <aside class="sidebar">
+<<<<<<< HEAD
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <div class="sb-sec">Master Data</div>
@@ -195,6 +196,30 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
             <?php if ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+=======
+            <?php if ($user['role'] != 'admin'): ?>
+                <div class="sb-sec">Core</div>
+                <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <?php endif; ?>
+            <div class="sb-sec">Master Data</div>
+            <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
+            <?php if ($user['role'] != 'kasir'): ?>
+                <a class="sb-link active" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+            <?php endif; ?>
+            <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
+            <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
+            <?php if ($user['role'] == 'owner'): ?>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <div class="sb-sec">Laporan</div>
+                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
+                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
+                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+            <?php elseif ($user['role'] == 'kasir'): ?>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+>>>>>>> bd16fe67f3d2c39d24208074f6ecd7987812c103
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
