@@ -20,31 +20,19 @@ if (isset($_GET['get_batch'])) {
 
     header('Content-Type: application/json');
 
-    $id_obat  = mysqli_real_escape_string($conn, $_GET['id_obat']);
-    // Tanggal dikirim dari JS (value input tanggal), fallback ke hari ini
-    $tanggal  = isset($_GET['tanggal']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['tanggal'])
-                ? $_GET['tanggal']
-                : date('Y-m-d');
+    $id_obat = $_GET['id_obat'];
 
-    $tgl_prefix = date('Ymd', strtotime($tanggal)); // misal: 20260502
-
-    // Hitung berapa batch sudah ada untuk obat ini PADA tanggal yang sama
-    $q = mysqli_query($conn, "
-        SELECT COUNT(*) as total
-        FROM pembelian
-        WHERE id_obat = '$id_obat'
-          AND DATE(tanggal) = '$tanggal'
+    $q = mysqli_query($conn, "SELECT MAX(CAST(batch AS UNSIGNED)) as last_batch FROM pembelian WHERE id_obat='$id_obat'
     ");
-    $data  = mysqli_fetch_assoc($q);
-    $next  = (int)$data['total'] + 1;
-    $urutan = str_pad($next, 3, '0', STR_PAD_LEFT); // 001, 002, ...
 
-    $batch = $tgl_prefix . '-' . $urutan; // misal: 20260502-001
+    $data = mysqli_fetch_assoc($q);
+
+    $next = $data['last_batch'] + 1;
+
+    $batch = str_pad($next, 3, '0', STR_PAD_LEFT);
 
     echo json_encode([
-        "batch"  => $batch,
-        "prefix" => $tgl_prefix,
-        "urutan" => $urutan
+        "batch" => $batch
     ]);
 
     exit;
@@ -72,23 +60,15 @@ if (isset($_POST['ajax_simpan'])) {
         exit;
     }
 
-    // AUTO BATCH: format YYYYMMDD-NNN (tanggal pembelian + urutan ke-N di hari itu)
-    $tgl_prefix  = date('Ymd', strtotime($tanggal)); // misal: 20260502
-    $q_batch     = mysqli_query($conn, "
-        SELECT COUNT(*) as total
-        FROM pembelian
-        WHERE id_obat = '$id_obat'
-          AND DATE(tanggal) = '$tanggal'
+    // AUTO BATCH
+    $q = mysqli_query($conn, "SELECT MAX(CAST(batch AS UNSIGNED)) as last_batch FROM pembelian WHERE id_obat='$id_obat'
     ");
-    $d_batch     = mysqli_fetch_assoc($q_batch);
-    $next_urutan = (int)$d_batch['total'] + 1;
-    $batch       = $tgl_prefix . '-' . str_pad($next_urutan, 3, '0', STR_PAD_LEFT);
+
+    $data = mysqli_fetch_assoc($q);
+    $next_batch = $data['last_batch'] + 1;
+    $batch = str_pad($next_batch, 3, '0', STR_PAD_LEFT);
 
     $total = $jumlah * $harga_beli;
-
-    // ── FIX: Dibayar tidak boleh melebihi total ──
-    if ($dibayar > $total) $dibayar = $total;
-
     $sisa  = $total - $dibayar;
 
     if ($sisa <= 0) {
@@ -131,20 +111,6 @@ if (isset($_POST['ajax_bayar'])) {
     }
 
     $sisa_lama = (float) $row['sisa'];
-
-    // ── FIX: Validasi server-side, bayar tidak boleh melebihi sisa ──
-    if ($bayar_tambah <= 0) {
-        echo json_encode(['success' => false, 'message' => 'Jumlah pembayaran harus lebih dari 0.']);
-        exit;
-    }
-    if ($bayar_tambah > $sisa_lama) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Jumlah pembayaran tidak boleh melebihi sisa hutang (Rp ' . number_format($sisa_lama, 0, ',', '.') . ').'
-        ]);
-        exit;
-    }
-
     $sisa_baru = $sisa_lama - $bayar_tambah;
     if ($sisa_baru < 0) $sisa_baru = 0;
 
@@ -197,7 +163,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
     <!-- Navigation -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -223,33 +189,26 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
     <div class="app-body">
         <aside class="sidebar">
-            <?php if ($user['role'] != 'admin'): ?>
-<<<<<<< HEAD
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-=======
-                <div class="sb-sec">Core</div>
-                <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
->>>>>>> 8d09b546e690e945f8c9d996dca731ad8a4e7666
-            <?php endif; ?>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="../master/kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
-                <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+            <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
             <a class="sb-link" href="../master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="../master/member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-                <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-                <div class="sb-sec">Laporan</div>
-                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+            <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+            <div class="sb-sec">Laporan</div>
+            <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
+            <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
+            <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -333,11 +292,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
                         <div class="form-group">
                             <label>Dibayar Sekarang</label>
-                            <!-- FIX: max diset dinamis via JS agar tidak bisa melebihi total -->
                             <input type="number" id="f-dibayar" class="form-input" placeholder="0" min="0" oninput="calcSisa()">
-                            <small id="dibayar-hint" style="color:var(--muted);font-size:11.5px;margin-top:4px;display:block">
-                                Maksimal pembayaran sesuai total pembelian
-                            </small>
                         </div>
 
                         <div class="sisa-preview" id="sisa-preview" style="display:none">
@@ -470,7 +425,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                                         </td>
                                         <td>
                                             <span class="badge-status badge-<?= strtolower($row['status_pembayaran']) ?> status-cell-<?= $row['id_pembelian'] ?>">
-                                                <?= $row['status_pembayaran'] === 'Lunas' ? '✓ Lunas' : '⚠ Hutang' ?>
+                                                <?= $row['status_pembayaran'] === 'lunas' ? '✓ Lunas' : '⚠ Hutang' ?>
                                             </span>
                                         </td>
                                     </tr>
@@ -502,19 +457,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
             <div class="modal-field" style="margin-top:14px">
                 <label>Jumlah Dibayar (Rp)</label>
-                <!-- FIX: max & attr diset saat modal dibuka, input realtime divalidasi -->
                 <input type="number" id="input-bayar" placeholder="Masukkan nominal..." min="1" oninput="previewBayar()">
-                <!-- Hint sisa hutang yang bisa dibayar -->
-                <small id="bayar-hint" style="color:var(--muted);font-size:11.5px;margin-top:5px;display:block">
-                    Maksimal: <strong id="bayar-hint-max">—</strong>
-                </small>
-                <!-- Pesan error jika melebihi sisa -->
-                <div id="bayar-error"
-                     style="display:none;margin-top:6px;padding:7px 10px;background:#fef2f2;border:1px solid #fca5a5;
-                            border-radius:7px;color:#dc2626;font-size:12px;font-weight:600">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <span id="bayar-error-msg">Pembayaran melebihi sisa hutang!</span>
-                </div>
             </div>
 
             <div class="sisa-preview" id="modal-sisa-preview" style="display:none;margin-top:4px">
@@ -524,7 +467,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
             <div class="modal-footer">
                 <button class="modal-btn secondary" onclick="closeModal('modal-bayar')">Batal</button>
-                <button class="modal-btn primary" id="btn-konfirmasi-bayar" onclick="submitBayar()">
+                <button class="modal-btn primary" onclick="submitBayar()">
                     <i class="fas fa-check"></i> Konfirmasi Bayar
                 </button>
             </div>
@@ -562,7 +505,8 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         function switchTab(tab, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('tab-beli').style.display    = tab === 'beli'    ? 'flex'  : 'none';
+
+            document.getElementById('tab-beli').style.display = tab === 'beli' ? 'flex' : 'none';
             document.getElementById('tab-history').style.display = tab === 'history' ? 'block' : 'none';
         }
 
@@ -573,32 +517,19 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
         function calcTotal() {
             const j = parseFloat(document.getElementById('f-jumlah').value) || 0;
-            const h = parseFloat(document.getElementById('f-harga').value)  || 0;
+            const h = parseFloat(document.getElementById('f-harga').value) || 0;
             document.getElementById('preview-total').textContent = formatRp(j * h);
-
-            // FIX: Update max attribute pada field dibayar setiap total berubah
-            const total = j * h;
-            const dibayarEl = document.getElementById('f-dibayar');
-            dibayarEl.max = total;
             calcSisa();
         }
 
         function calcSisa() {
-            const j = parseFloat(document.getElementById('f-jumlah').value)  || 0;
-            const h = parseFloat(document.getElementById('f-harga').value)   || 0;
+            const j = parseFloat(document.getElementById('f-jumlah').value) || 0;
+            const h = parseFloat(document.getElementById('f-harga').value) || 0;
             const d = parseFloat(document.getElementById('f-dibayar').value) || 0;
             const total = j * h;
-
-            // FIX: Clamp nilai dibayar agar tidak melebihi total
-            if (d > total && total > 0) {
-                document.getElementById('f-dibayar').value = total;
-            }
-
-            const dibayarFinal = Math.min(d, total);
-            const sisa         = total - dibayarFinal;
-            const previewEl    = document.getElementById('sisa-preview');
-
-            if (dibayarFinal > 0 && sisa > 0) {
+            const sisa = total - d;
+            const previewEl = document.getElementById('sisa-preview');
+            if (d > 0 && sisa > 0) {
                 previewEl.style.display = 'flex';
                 document.getElementById('preview-sisa').textContent = formatRp(sisa);
             } else {
@@ -608,47 +539,54 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
         // ── Submit Pembelian ──
         function submitPembelian() {
-            const tanggal     = document.getElementById('f-tanggal').value;
+            const tanggal = document.getElementById('f-tanggal').value;
             const id_supplier = document.getElementById('f-supplier').value;
-            const id_obat     = document.getElementById('f-obat').value;
-            const expired     = document.getElementById('f-expired').value;
-            const batch       = document.getElementById('f-batch').value;
-            const jumlah      = parseFloat(document.getElementById('f-jumlah').value) || 0;
-            const harga       = parseFloat(document.getElementById('f-harga').value)  || 0;
-            const total       = jumlah * harga;
-            let   dibayar     = parseFloat(document.getElementById('f-dibayar').value) || 0;
+            const id_obat = document.getElementById('f-obat').value;
+            const expired = document.getElementById('f-expired').value;
+            const batch = document.getElementById('f-batch').value;
+            const jumlah = document.getElementById('f-jumlah').value;
+            const harga = document.getElementById('f-harga').value;
+            const dibayar = document.getElementById('f-dibayar').value || 0;
 
             if (!tanggal || !id_supplier || !id_obat || !expired || !jumlah || !harga) {
                 showToast('Harap isi semua field yang diperlukan!', true);
                 return;
             }
-            if (jumlah <= 0) { showToast('Jumlah harus lebih dari 0!', true); return; }
-            if (harga  < 0)  { showToast('Harga tidak boleh minus!', true);   return; }
-
-            // FIX: Clamp dibayar di sisi klien juga
-            if (dibayar > total) {
-                dibayar = total;
-                document.getElementById('f-dibayar').value = total;
-            }
 
             const fd = new FormData();
-            fd.append('ajax_simpan',  '1');
-            fd.append('tanggal',      tanggal);
-            fd.append('id_supplier',  id_supplier);
-            fd.append('id_obat',      id_obat);
+            fd.append('ajax_simpan', '1');
+            fd.append('tanggal', tanggal);
+            fd.append('id_supplier', id_supplier);
+            fd.append('id_obat', id_obat);
             fd.append('expired_date', expired);
-            fd.append('batch',        batch);
-            fd.append('jumlah',       jumlah);
-            fd.append('harga_beli',   harga);
-            fd.append('dibayar',      dibayar);
+            fd.append('batch', batch);
+            fd.append('jumlah', jumlah);
+            fd.append('harga_beli', harga);
+            fd.append('dibayar', dibayar);
 
-            fetch(window.location.href, { method:'POST', body:fd })
+            if (jumlah <= 0) {
+                showToast('Jumlah harus lebih dari 0!', true);
+                return;
+            }
+
+            if (harga < 0) {
+                showToast('Harga tidak boleh minus!', true);
+                return;
+            }
+
+            fetch(window.location.href, {
+                    method: 'POST',
+                    body: fd
+                })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
                         document.getElementById('modal-sukses-text').textContent = data.message;
                         openModal('modal-sukses');
-                        setTimeout(() => { closeModal('modal-sukses'); location.reload(); }, 1800);
+                        setTimeout(() => {
+                            closeModal('modal-sukses');
+                            location.reload();
+                        }, 1800);
                     } else {
                         document.getElementById('modal-error-text').textContent = data.message;
                         openModal('modal-error');
@@ -661,89 +599,59 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         }
 
         // ── Bayar Hutang ──
-        let activeBayarId   = null;
+        let activeBayarId = null;
         let activeBayarSisa = 0;
 
         function openBayarModal(id, nama, sisa) {
-            activeBayarId   = id;
+            activeBayarId = id;
             activeBayarSisa = sisa;
-
-            document.getElementById('modal-nama-obat').textContent  = nama;
-            document.getElementById('modal-sisa-text').textContent  = formatRp(sisa);
-            document.getElementById('input-bayar').value            = '';
-            document.getElementById('input-bayar').max              = sisa;   // FIX: set max
-            document.getElementById('bayar-hint-max').textContent   = formatRp(sisa);
-            document.getElementById('bayar-error').style.display    = 'none';
+            document.getElementById('modal-nama-obat').textContent = nama;
+            document.getElementById('modal-sisa-text').textContent = formatRp(sisa);
+            document.getElementById('input-bayar').value = '';
             document.getElementById('modal-sisa-preview').style.display = 'none';
-            document.getElementById('btn-konfirmasi-bayar').disabled    = false;
-
             openModal('modal-bayar');
         }
 
         function previewBayar() {
-            const bayar      = parseFloat(document.getElementById('input-bayar').value) || 0;
-            const errorEl    = document.getElementById('bayar-error');
-            const errorMsg   = document.getElementById('bayar-error-msg');
-            const btnKonfirm = document.getElementById('btn-konfirmasi-bayar');
-            const previewEl  = document.getElementById('modal-sisa-preview');
-
-            // FIX: Validasi realtime – jika melebihi sisa, tampilkan error & block tombol
-            if (bayar > activeBayarSisa) {
-                errorMsg.textContent            = `Pembayaran melebihi sisa hutang! Maksimal ${formatRp(activeBayarSisa)}.`;
-                errorEl.style.display           = 'block';
-                btnKonfirm.disabled             = true;
-                btnKonfirm.style.opacity        = '0.5';
-                btnKonfirm.style.cursor         = 'not-allowed';
-                previewEl.style.display         = 'none';
-                return;
-            } else {
-                errorEl.style.display    = 'none';
-                btnKonfirm.disabled      = false;
-                btnKonfirm.style.opacity = '1';
-                btnKonfirm.style.cursor  = 'pointer';
-            }
-
+            const bayar = parseFloat(document.getElementById('input-bayar').value) || 0;
+            const sisa_after = activeBayarSisa - bayar;
+            const el = document.getElementById('modal-sisa-preview');
             if (bayar > 0) {
-                const sisa_after = activeBayarSisa - bayar;
-                previewEl.style.display = 'flex';
-                const afterEl           = document.getElementById('modal-sisa-after');
-                afterEl.textContent     = sisa_after <= 0 ? '✓ Lunas' : formatRp(sisa_after);
-                afterEl.style.color     = sisa_after <= 0 ? 'var(--green)' : 'var(--amber)';
+                el.style.display = 'flex';
+                const afterEl = document.getElementById('modal-sisa-after');
+                afterEl.textContent = sisa_after <= 0 ? '✓ Lunas' : formatRp(sisa_after);
+                afterEl.style.color = sisa_after <= 0 ? 'var(--green)' : 'var(--amber)';
             } else {
-                previewEl.style.display = 'none';
+                el.style.display = 'none';
             }
         }
 
         function submitBayar() {
             const bayar = parseFloat(document.getElementById('input-bayar').value) || 0;
-
             if (!bayar || bayar <= 0) {
                 showToast('Masukkan jumlah pembayaran!', true);
                 return;
             }
 
-            // FIX: Guard terakhir sebelum kirim — pastikan tidak melebihi sisa
-            if (bayar > activeBayarSisa) {
-                showToast(`Pembayaran tidak boleh melebihi sisa hutang (${formatRp(activeBayarSisa)})!`, true);
-                return;
-            }
-
             const fd = new FormData();
-            fd.append('ajax_bayar',    '1');
-            fd.append('id_pembelian',  activeBayarId);
-            fd.append('bayar_tambah',  bayar);
+            fd.append('ajax_bayar', '1');
+            fd.append('id_pembelian', activeBayarId);
+            fd.append('bayar_tambah', bayar);
 
-            fetch(window.location.href, { method:'POST', body:fd })
+            fetch(window.location.href, {
+                    method: 'POST',
+                    body: fd
+                })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
                         closeModal('modal-bayar');
-                        const sisaCell   = document.querySelector(`.sisa-cell-${activeBayarId}`);
+                        const sisaCell = document.querySelector(`.sisa-cell-${activeBayarId}`);
                         const statusCell = document.querySelector(`.status-cell-${activeBayarId}`);
-                        if (sisaCell)   sisaCell.textContent = formatRp(data.sisa_baru);
+                        if (sisaCell) sisaCell.textContent = formatRp(data.sisa_baru);
                         if (statusCell) {
                             statusCell.textContent = data.status === 'Lunas' ? '✓ Lunas' : '⚠ Hutang';
-                            statusCell.className   = `badge-status badge-${data.status.toLowerCase()} status-cell-${activeBayarId}`;
+                            statusCell.className = `badge-status badge-${data.status.toLowerCase()} status-cell-${activeBayarId}`;
                         }
                         if (data.status === 'Lunas') {
                             const btn = document.querySelector(`#row-${activeBayarId} .btn-bayar`);
@@ -751,7 +659,6 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                         }
                         showToast('Pembayaran berhasil dicatat!');
                     } else {
-                        // FIX: Tampilkan pesan error dari server (termasuk validasi sisa)
                         document.getElementById('modal-error-text').textContent = data.message;
                         openModal('modal-error');
                     }
@@ -763,14 +670,19 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         }
 
         // ── Modal helpers ──
-        function openModal(id)  { document.getElementById(id).classList.add('show');    }
-        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        function openModal(id) {
+            document.getElementById(id).classList.add('show');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
 
         // ── Toast ──
         function showToast(msg, error = false) {
             const t = document.getElementById('toast');
-            t.innerHTML  = `<i class="fas fa-${error ? 'exclamation-circle' : 'check-circle'}"></i> ${msg}`;
-            t.className  = 'toast show' + (error ? ' error' : '');
+            t.innerHTML = `<i class="fas fa-${error ? 'exclamation-circle' : 'check-circle'}"></i> ${msg}`;
+            t.className = 'toast show' + (error ? ' error' : '');
             setTimeout(() => t.className = 'toast', 2800);
         }
 
@@ -781,32 +693,29 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         }
         document.addEventListener('click', function(e) {
             var wrap = document.getElementById('ddwrap');
-            if (wrap && !wrap.contains(e.target)) document.getElementById('ddmenu').style.display = 'none';
+            if (wrap && !wrap.contains(e.target)) {
+                document.getElementById('ddmenu').style.display = 'none';
+            }
         });
 
         function generateBatch() {
-            const obat    = document.getElementById('f-obat').value;
-            const tanggal = document.getElementById('f-tanggal').value;
+
+            const obat = document.getElementById('f-obat').value;
 
             if (!obat) {
                 document.getElementById('f-batch').value = '';
                 return;
             }
 
-            const url = `pembelian.php?get_batch=1&id_obat=${encodeURIComponent(obat)}&tanggal=${encodeURIComponent(tanggal)}`;
-
-            fetch(url)
+            fetch("pembelian.php?get_batch=1&id_obat=" + obat)
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('f-batch').value = data.batch;
                 });
-        }
 
-        // Auto-refresh batch juga saat tanggal diubah (selama obat sudah dipilih)
-        document.getElementById('f-tanggal').addEventListener('change', function () {
-            if (document.getElementById('f-obat').value) generateBatch();
-        });
+        }
     </script>
 
 </body>
+
 </html>

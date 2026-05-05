@@ -12,12 +12,6 @@ if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['r
     exit;
 }
 
-if ($_SESSION['role'] == "owner" && (isset($_POST['ajax_tambah']) || isset($_POST['ajax_edit']) || isset($_POST['ajax_hapus']))) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Owner tidak berhak mengubah data.']);
-    exit;
-}
-
 $username  = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user      = mysqli_fetch_assoc($queryUser);
@@ -154,15 +148,8 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
 
     <div class="app-body">
         <aside class="sidebar">
-<<<<<<< HEAD
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-=======
-            <?php if ($user['role'] != 'admin'): ?>
-                <div class="sb-sec">Core</div>
-                <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <?php endif; ?>
->>>>>>> 8d09b546e690e945f8c9d996dca731ad8a4e7666
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
@@ -171,7 +158,9 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link active" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-<<<<<<< HEAD
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <div class="sb-sec">Laporan</div>
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
@@ -179,18 +168,6 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             <?php elseif ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-=======
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-                <div class="sb-sec">Laporan</div>
-                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-            <?php elseif ($user['role'] == 'kasir'): ?>
-                <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
->>>>>>> 8d09b546e690e945f8c9d996dca731ad8a4e7666
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -205,17 +182,9 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                     <h2>Data Member</h2>
                     <p>Kelola data member apotek</p>
                 </div>
-<<<<<<< HEAD
-                <?php if ($user['role'] != 'owner'): ?>
                 <button class="btn-add" onclick="openModal('m-tambah')">
                     <i class="fas fa-plus"></i> Tambah Member
                 </button>
-                <?php endif; ?>
-=======
-                <button class="btn-add" onclick="openModal('m-tambah')">
-                    <i class="fas fa-plus"></i> Tambah Member
-                </button>
->>>>>>> 8d09b546e690e945f8c9d996dca731ad8a4e7666
             </div>
 
             <div class="table-card">
@@ -229,11 +198,9 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                                 onchange="document.getElementById('ff').submit()">
                         </div>
                         <div class="toolbar-right">
-                            <?php if ($user['role'] != 'owner'): ?>
                             <button type="button" class="btn-export" onclick="exportCSV()">
                                 <i class="fas fa-download"></i> Export
                             </button>
-                            <?php endif; ?>
                         </div>
                     </div>
                 </form>
@@ -247,23 +214,13 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                                 <th>No. HP</th>
                                 <th>Alamat</th>
                                 <th>Terdaftar</th>
-<<<<<<< HEAD
-                                <?php if ($user['role'] != 'owner'): ?>
                                 <th class="center">Aksi</th>
-                                <?php endif; ?>
-=======
-                                <th class="center">Aksi</th>
->>>>>>> 8d09b546e690e945f8c9d996dca731ad8a4e7666
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($members)): ?>
                                 <tr>
-<<<<<<< HEAD
-                                    <td colspan="<?= $user['role'] != 'owner' ? 6 : 5 ?>">
-=======
                                     <td colspan="6">
->>>>>>> 8d09b546e690e945f8c9d996dca731ad8a4e7666
                                         <div class="empty-state">
                                             <i class="fas fa-user-friends"></i>
                                             <p>Tidak ada member ditemukan</p>
@@ -283,10 +240,6 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                                         <td class="td-muted"><?= htmlspecialchars($m['no_hp']) ?></td>
                                         <td class="td-muted"><?= htmlspecialchars($m['alamat'] ?: '—') ?></td>
                                         <td class="td-muted"><?= $tgl ?></td>
-<<<<<<< HEAD
-                                        <?php if ($user['role'] != 'owner'): ?>
-=======
->>>>>>> 8d09b546e690e945f8c9d996dca731ad8a4e7666
                                         <td>
                                             <div class="action-cell">
                                                 <button class="btn-icon blue" title="Edit"
