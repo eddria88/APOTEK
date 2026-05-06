@@ -198,9 +198,11 @@ $ci = 0;
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
-            <?php elseif ($user['role'] == 'kasir'): ?>
+            <?php elseif ($user['role'] == 'admin'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+            <?php elseif ($user['role'] == 'kasir'): ?>
+            <div class="sb-sec">Transaksi</div>
             <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             
             <?php endif; ?>
