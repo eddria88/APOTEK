@@ -49,3 +49,48 @@ include "koneksi.php";
                 mysqli_stmt_close($stmt);
             }
             ?>
+
+            <form method="POST" id="loginForm" autocomplete="off">
+
+                <!-- Username -->
+                <div class="inputBox">
+                    <input type="text" name="username" id="username"
+                           placeholder="Masukkan username" required>
+                </div>
+
+                <!-- Password -->
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="passwordInput"
+                           placeholder="Masukkan password" required>
+                    <span class="toggle-password" onclick="togglePassword()" title="Tampilkan/Sembunyikan Password">
+                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <line id="eyeSlash" x1="2" y1="2" x2="22" y2="22"
+                                  style="display:none;"/>
+                        </svg>
+                    </span>
+                </div>
+
+                <button type="submit" name="login">Login</button>
+
+            </form>
+        </div>
+
+    </div>
+
+    <script>
+        function togglePassword() {
+            const input   = document.getElementById('passwordInput');
+            const slash   = document.getElementById('eyeSlash');
+            const isHidden = input.type === 'password';
+
+            input.type    = isHidden ? 'text' : 'password';
+            slash.style.display = isHidden ? 'block' : 'none';
+        }
+    </script>
+</body>
+
+</html>

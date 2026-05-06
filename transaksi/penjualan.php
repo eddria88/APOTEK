@@ -15,10 +15,15 @@ if ($_SESSION['role'] != "kasir" && $_SESSION['role'] != "owner") {
 $username  = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user      = mysqli_fetch_assoc($queryUser);
+$isOwner   = $user['role'] === 'owner';
 
 // ── AJAX: Tambah Member Baru ──
 if (isset($_POST['ajax_tambah_member'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     $nama   = mysqli_real_escape_string($conn, trim($_POST['nama_lengkap'] ?? ''));
     $hp     = mysqli_real_escape_string($conn, trim($_POST['no_hp'] ?? ''));
     $alamat = mysqli_real_escape_string($conn, trim($_POST['alamat'] ?? ''));
@@ -37,6 +42,10 @@ if (isset($_POST['ajax_tambah_member'])) {
 // ── AJAX: Simpan Transaksi ──
 if (isset($_POST['ajax_transaksi'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     $tanggal   = date("Y-m-d H:i:s");
     $items     = json_decode($_POST['items'], true);
     $bayar     = (float) $_POST['bayar'];
@@ -143,7 +152,7 @@ $historyResult = mysqli_query(
     <!-- Navigation -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -191,6 +200,7 @@ $historyResult = mysqli_query(
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <a class="sb-link active" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <?php endif; ?>
             <div class="sb-footer">
@@ -202,13 +212,15 @@ $historyResult = mysqli_query(
         <!-- MAIN -->
         <div class="main-content">
 
+                <?php if (!$isOwner): ?>
             <div class="tabs-bar">
                 <button class="tab-btn active" onclick="switchTab('pos',this)"><i class="fas fa-cash-register"></i> Kasir / Transaksi</button>
                 <button class="tab-btn" onclick="switchTab('history',this)"><i class="fas fa-history"></i> Riwayat Penjualan</button>
             </div>
+            <?php endif; ?>
 
             <!-- POS -->
-            <div id="tab-pos" class="pos-view">
+            <div id="tab-pos" class="pos-view" style="<?= $isOwner ? 'display:none;' : '' ?>">
 
                 <div class="pos-products">
 
@@ -216,7 +228,7 @@ $historyResult = mysqli_query(
                     <div class="search-card">
                         <div class="search-box">
                             <i class="fas fa-barcode"></i>
-                            <input type="text" id="search-product" placeholder="Scan barcode atau ketik nama obat..." oninput="filterProducts(this.value)">
+                            <input type="text" id="search-product" placeholder="Scan barcode atau ketik nama obat..." oninput="filterProducts(this.value)" <?= $isOwner ? 'disabled' : '' ?>>
                         </div>
                         <div class="cat-filter" id="cat-filter-wrap">
                             <button class="btn-filter active" onclick="filterCat(this,'Semua')">Semua</button>
@@ -248,7 +260,7 @@ $historyResult = mysqli_query(
                             <!-- Picker -->
                             <div id="member-picker">
                                 <div style="display:flex;gap:6px">
-                                    <select id="member-sel" class="sel-inp" style="font-size:12.5px;padding:7px 10px;flex:1" onchange="selectMember(this.value)">
+                                    <select id="member-sel" class="sel-inp" style="font-size:12.5px;padding:7px 10px;flex:1" onchange="selectMember(this.value)" <?= $isOwner ? 'disabled' : '' ?>>
                                         <option value="">— Tanpa Member —</option>
                                         <?php foreach ($memberList as $m): ?>
                                             <option value="<?= $m['id_member'] ?>"
@@ -258,7 +270,7 @@ $historyResult = mysqli_query(
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <button class="btn-new-member" style="padding:7px 10px;font-size:12px" onclick="openModal('modal-reg-member')" title="Daftar member baru">
+                                    <button class="btn-new-member" style="padding:7px 10px;font-size:12px" onclick="openModal('modal-reg-member')" title="Daftar member baru" <?= $isOwner ? 'disabled' : '' ?>>
                                         <i class="fas fa-user-plus"></i>
                                     </button>
                                 </div>
@@ -286,7 +298,7 @@ $historyResult = mysqli_query(
 
                         <div>
                             <span class="pay-label">Metode Pembayaran</span>
-                            <select id="pay-method" class="sel-inp" onchange="togglePayFields(this.value)">
+                            <select id="pay-method" class="sel-inp" onchange="togglePayFields(this.value)" <?= $isOwner ? 'disabled' : '' ?>>
                                 <option value="cash">💵 Tunai</option>
                                 <option value="transfer">🏦 Transfer Bank</option>
                                 <option value="ewallet">📱 E-Wallet</option>
@@ -295,22 +307,22 @@ $historyResult = mysqli_query(
 
                         <div id="cash-sec" class="cash-wrap">
                             <span class="pay-label">Uang Bayar</span>
-                            <input type="number" id="cash-in" class="cash-inp" placeholder="Masukkan nominal..." oninput="calcKemb()">
+                            <input type="number" id="cash-in" class="cash-inp" placeholder="Masukkan nominal..." oninput="calcKemb()" <?= $isOwner ? 'disabled' : '' ?>>
                             <div class="kemb-row hidden" id="kemb-row">
                                 <span>Kembalian</span>
                                 <span id="kemb-val">Rp 0</span>
                             </div>
                         </div>
 
-                        <button class="btn-pay" id="btn-pay" onclick="confirmTrx()" disabled>
-                            <i class="fas fa-check-circle"></i> Proses Pembayaran
+                        <button class="btn-pay" id="btn-pay" onclick="confirmTrx()" disabled <?= $isOwner ? 'title="Owner tidak dapat input transaksi"' : '' ?>>
+                            <i class="fas fa-check-circle"></i> <?= $isOwner ? 'Monitoring' : 'Proses Pembayaran' ?>
                         </button>
                     </div>
                 </div>
             </div>
 
             <!-- History -->
-            <div id="tab-history" class="history-view">
+            <div id="tab-history" class="history-view" style="<?= $isOwner ? 'display:flex;' : '' ?>">
                 <div class="history-card">
                     <div class="history-card-hdr"><i class="fas fa-table"></i> Riwayat Penjualan Terbaru</div>
                     <div style="overflow-x:auto">
@@ -449,6 +461,7 @@ $historyResult = mysqli_query(
     <script>
         const products = <?= json_encode($obatList) ?>;
         const UPLOAD_URL = '<?= $uploadUrl ?>';
+        const ownerMode = <?= $isOwner ? 'true' : 'false' ?>;
 
         const iconStyles = ['green', 'red', 'amber', 'blue'];
         const iconEmojis = ['💊', '💉', '🧴', '🩺', '🌿', '🍃'];
@@ -468,6 +481,7 @@ $historyResult = mysqli_query(
 
         // ── MEMBER ──
         function selectMember(id) {
+            if (ownerMode) return;
             if (!id) {
                 clearMember();
                 return;
@@ -499,6 +513,7 @@ $historyResult = mysqli_query(
         }
 
         function submitRegMember() {
+            if (ownerMode) return;
             const nama = document.getElementById('nm-nama').value.trim();
             const hp = document.getElementById('nm-hp').value.trim();
             const alamat = document.getElementById('nm-alamat').value.trim();
@@ -557,7 +572,8 @@ $historyResult = mysqli_query(
                 const thumb = p.gambar ?
                     `<img src="${UPLOAD_URL}${p.gambar}" alt="${p.nama_obat}" class="product-img">` :
                     `<div class="product-icon ${st}">${em}</div>`;
-                return `<div class="product-card" onclick="addCart(${p.id_obat})">${badge}
+                const clickAttr = ownerMode ? '' : `onclick="addCart(${p.id_obat})"`;
+                return `<div class="product-card" ${clickAttr}>${badge}
             ${thumb}
             <div class="product-name">${p.nama_obat}</div>
             <div class="product-price">Rp ${fmt(p.harga_jual)}</div>
@@ -580,6 +596,7 @@ $historyResult = mysqli_query(
 
         // ── CART ──
         function addCart(id) {
+            if (ownerMode) return;
             const p = products.find(x => x.id_obat == id);
             if (!p) return;
             if (!cart[id]) cart[id] = {
@@ -599,6 +616,7 @@ $historyResult = mysqli_query(
         }
 
         function changeQty(id, d) {
+            if (ownerMode) return;
             if (!cart[id]) return;
             cart[id].qty += d;
             if (cart[id].qty <= 0) delete cart[id];
@@ -691,6 +709,7 @@ $historyResult = mysqli_query(
 
         // ── TRANSACTION ──
         function confirmTrx() {
+            if (ownerMode) return;
             const total = getTotal(),
                 sub = getSubtotal();
             const method = document.getElementById('pay-method').value;

@@ -15,10 +15,15 @@ if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "owner") {
 $username  = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user      = mysqli_fetch_assoc($queryUser);
+$isOwner   = $user['role'] === 'owner';
 
 // AJAX: Tambah
 if (isset($_POST['ajax_tambah'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     ob_start();
     $nama   = mysqli_real_escape_string($conn, $_POST['nama_supplier'] ?? '');
     $alamat = mysqli_real_escape_string($conn, $_POST['alamat'] ?? '');
@@ -53,6 +58,10 @@ if (isset($_POST['ajax_tambah'])) {
 // AJAX: Edit
 if (isset($_POST['ajax_edit'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     ob_start();
     $id     = (int)($_POST['id_supplier'] ?? 0);
     $nama   = mysqli_real_escape_string($conn, $_POST['nama_supplier'] ?? '');
@@ -76,6 +85,10 @@ if (isset($_POST['ajax_edit'])) {
 // AJAX: Hapus
 if (isset($_POST['ajax_hapus'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     ob_start();
     $id  = (int)($_POST['id_supplier'] ?? 0);
     $cek = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM pembelian WHERE id_supplier='$id'"));
@@ -142,7 +155,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
     <!-- TOP NAV -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -206,9 +219,11 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
                     <h2>Data Supplier</h2>
                     <p>Kelola informasi pemasok obat</p>
                 </div>
+                <?php if (!$isOwner): ?>
                 <button class="btn-add" onclick="openTambah()">
                     <i class="fas fa-plus"></i> Tambah Supplier
                 </button>
+                <?php endif; ?>
             </div>
 
             <!-- TABLE CARD -->
@@ -284,12 +299,14 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
                                         </td>
                                         <td>
                                             <div class="action-cell">
+                                                <?php if (!$isOwner): ?>
                                                 <button class="btn-icon blue" title="Edit" onclick="openEdit(<?= $row['id_supplier'] ?>)">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button class="btn-icon red" title="Hapus" onclick="confirmHapus(<?= $row['id_supplier'] ?>,'<?= addslashes($row['nama_supplier']) ?>')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>
@@ -412,6 +429,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
 
     <script>
         const BASE_URL = '<?= basename($_SERVER["PHP_SELF"]) ?>';
+        const ownerMode = <?= $isOwner ? 'true' : 'false' ?>;
 
         function goPage(p) {
             const u = new URL(window.location.href);
@@ -487,6 +505,11 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
             const tr = document.createElement('tr');
             tr.id = 'tr-' + d.id;
             tr.style.cssText = 'opacity:0;transition:opacity .3s';
+            const actionButtons = ownerMode ? '' : `
+                <div class="action-cell">
+                    <button class="btn-icon blue" onclick="openEdit(${d.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn-icon red" onclick="confirmHapus(${d.id},'${d.nama.replace(/'/g," \\'")}')"><i class="fas fa-trash"></i></button>
+                </div>`;
             tr.innerHTML = `
             <td><span class="id-mono">${idDisplay}</span></td>
             <td><span class="td-name">${d.nama}</span></td>
@@ -494,13 +517,7 @@ $dataResult = mysqli_query($conn, "SELECT * FROM supplier $where ORDER BY id_sup
             <td class="td-muted">${d.telp||'—'}</td>
             <td class="td-muted">${d.email||'—'}</td>
             <td><span class="badge-status ${sCls}"><span class="badge-dot-s"></span>${d.status}</span></td>
-            <td>
-                <div class="action-cell">
-                <button class="btn-icon blue" onclick="openEdit(${d.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn-icon red" onclick="confirmHapus(${d.id},'${d.nama.replace(/'/g," \\'")}')"><i
-                class="fas fa-trash"></i></button>
-            </div>
-            </td>`;
+            <td>${actionButtons}</td>`;
             tbody.prepend(tr);
             requestAnimationFrame(() => tr.style.opacity = '1');
         }

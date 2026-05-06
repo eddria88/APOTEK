@@ -15,6 +15,7 @@ if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['r
 $username  = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user      = mysqli_fetch_assoc($queryUser);
+$isOwner   = $user['role'] === 'owner';
 
 // Pastikan tabel member tersedia
 mysqli_query($conn, "CREATE TABLE IF NOT EXISTS member (
@@ -28,6 +29,10 @@ mysqli_query($conn, "CREATE TABLE IF NOT EXISTS member (
 // AJAX: Tambah
 if (isset($_POST['ajax_tambah'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     $nama   = mysqli_real_escape_string($conn, trim($_POST['nama_lengkap'] ?? ''));
     $hp     = mysqli_real_escape_string($conn, trim($_POST['no_hp'] ?? ''));
     $alamat = mysqli_real_escape_string($conn, trim($_POST['alamat'] ?? ''));
@@ -57,6 +62,10 @@ if (isset($_POST['ajax_tambah'])) {
 // AJAX: Edit
 if (isset($_POST['ajax_edit'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     $id     = (int)($_POST['id_member'] ?? 0);
     $nama   = mysqli_real_escape_string($conn, trim($_POST['nama_lengkap'] ?? ''));
     $hp     = mysqli_real_escape_string($conn, trim($_POST['no_hp'] ?? ''));
@@ -75,6 +84,10 @@ if (isset($_POST['ajax_edit'])) {
 // AJAX: Hapus
 if (isset($_POST['ajax_hapus'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     $id = (int)($_POST['id_member'] ?? 0);
     if ($id <= 0) {
         echo json_encode(['success' => false, 'message' => 'ID member tidak valid.']);
@@ -121,7 +134,7 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
     <!-- Navigation -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -182,9 +195,11 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                     <h2>Data Member</h2>
                     <p>Kelola data member apotek</p>
                 </div>
+                <?php if (!$isOwner): ?>
                 <button class="btn-add" onclick="openModal('m-tambah')">
                     <i class="fas fa-plus"></i> Tambah Member
                 </button>
+                <?php endif; ?>
             </div>
 
             <div class="table-card">
@@ -242,15 +257,17 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                                         <td class="td-muted"><?= $tgl ?></td>
                                         <td>
                                             <div class="action-cell">
-                                                <button class="btn-icon blue" title="Edit"
-                                                    onclick="openEdit(<?= $m['id_member'] ?>,'<?= addslashes(htmlspecialchars($m['nama_lengkap'])) ?>','<?= addslashes(htmlspecialchars($m['no_hp'])) ?>','<?= addslashes(htmlspecialchars($m['alamat'])) ?>')">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon red" title="Hapus"
-                                                    onclick="confirmHapus(<?= $m['id_member'] ?>,'<?= addslashes(htmlspecialchars($m['nama_lengkap'])) ?>')">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
+                                            <?php if (!$isOwner): ?>
+                                            <button class="btn-icon blue" title="Edit"
+                                                onclick="openEdit(<?= $m['id_member'] ?>,'<?= addslashes(htmlspecialchars($m['nama_lengkap'])) ?>','<?= addslashes(htmlspecialchars($m['no_hp'])) ?>','<?= addslashes(htmlspecialchars($m['alamat'])) ?>')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn-icon red" title="Hapus"
+                                                onclick="confirmHapus(<?= $m['id_member'] ?>,'<?= addslashes(htmlspecialchars($m['nama_lengkap'])) ?>')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            <?php endif; ?>
+                                        </div>
                                         </td>
                                     </tr>
                             <?php endforeach;

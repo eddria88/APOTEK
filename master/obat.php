@@ -15,6 +15,7 @@ if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['r
 $username = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user = mysqli_fetch_assoc($queryUser);
+$isOwner = $user['role'] === 'owner';
 
 $harga_jual   = (float) ($_POST['harga_jual'] ?? 0);
 $stok         = (int)   ($_POST['stok'] ?? 0);
@@ -52,6 +53,10 @@ function handleUploadGambar($fileKey, $uploadDir)
 // AJAX: Tambah
 if (isset($_POST['ajax_tambah'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     ob_start(); // buffer output agar PHP warning tidak merusak JSON
 
     $nama         = mysqli_real_escape_string($conn, $_POST['nama_obat'] ?? '');
@@ -111,6 +116,10 @@ if (isset($_POST['ajax_tambah'])) {
 // AJAX: Edit
 if (isset($_POST['ajax_edit'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     ob_start();
     $id           = (int)   ($_POST['id_obat'] ?? 0);
     $nama         = mysqli_real_escape_string($conn, $_POST['nama_obat'] ?? '');
@@ -185,6 +194,10 @@ if (isset($_POST['ajax_hapus_gambar'])) {
 // AJAX: Hapus
 if (isset($_POST['ajax_hapus'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     ob_start();
     $id  = (int) ($_POST['id_obat'] ?? 0);
     $row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT gambar FROM obat WHERE id_obat='$id'"));
@@ -252,7 +265,7 @@ $dataResult = mysqli_query(
     <!-- Navigation -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -312,9 +325,11 @@ $dataResult = mysqli_query(
                     <h2>Data Obat</h2>
                     <p>Kelola data obat dan produk apotek</p>
                 </div>
+                <?php if (!$isOwner): ?>
                 <button class="btn-add" onclick="openModal('m-tambah')">
                     <i class="fas fa-plus"></i> Tambah Obat
                 </button>
+                <?php endif; ?>
             </div>
 
             <div class="table-card">
@@ -410,12 +425,14 @@ $dataResult = mysqli_query(
                                         <td><span class="stok-badge <?= $stokCls ?>"><?= $stok ?></span></td>
                                         <td>
                                             <div class="action-cell">
+                                                <?php if (!$isOwner): ?>
                                                 <button class="btn-icon blue" title="Edit" onclick="openEdit(<?= $row['id_obat'] ?>)">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button class="btn-icon red" title="Hapus" onclick="confirmHapus(<?= $row['id_obat'] ?>, '<?= addslashes($row['nama_obat']) ?>')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>

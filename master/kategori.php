@@ -15,11 +15,16 @@ if($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['ro
 $username = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user = mysqli_fetch_assoc($queryUser);
+$isOwner   = $user['role'] === 'owner';
 
 // AJAX: Tambah
 // AJAX: Tambah
 if (isset($_POST['ajax_tambah'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     ob_start();
 
     $nama = mysqli_real_escape_string($conn, $_POST['nama_kategori'] ?? '');
@@ -52,6 +57,10 @@ if (isset($_POST['ajax_tambah'])) {
 // AJAX: Edit
 if (isset($_POST['ajax_edit'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     ob_start();
 
     $id   = (int) ($_POST['id_kategori'] ?? 0);
@@ -83,6 +92,10 @@ if (isset($_POST['ajax_edit'])) {
 // AJAX: Hapus
 if (isset($_POST['ajax_hapus'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
     ob_start();
     $id  = (int) ($_POST['id_kategori'] ?? 0);
     $cek = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as c FROM obat WHERE id_kategori='$id'"));
@@ -108,6 +121,21 @@ $query = mysqli_query(
 );
 $kategoris = [];
 while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
+
+$iconMap = [
+    'obat bebas'         => ['fa-pills',                   'blue'],
+    'obat keras'         => ['fa-prescription-bottle-alt', 'red'],
+    'herbal'             => ['fa-leaf',                    'green'],
+    'vitamin'            => ['fa-capsules',                'amber'],
+    'vitamin & suplemen' => ['fa-capsules',                'amber'],
+    'suplemen'           => ['fa-dumbbell',                'teal'],
+    'produk bayi'        => ['fa-baby',                    'purple'],
+    'antibiotik'         => ['fa-bacteria',                'teal'],
+    'default'            => ['fa-pills',                   'blue'],
+];
+$colorCycle = ['blue', 'red', 'green', 'amber', 'purple', 'teal', 'pink'];
+$iconCycle  = ['fa-pills', 'fa-prescription-bottle-alt', 'fa-leaf', 'fa-capsules', 'fa-baby', 'fa-bacteria', 'fa-dumbbell'];
+$ci = 0;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -127,7 +155,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
     <!-- Navigation -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -187,29 +215,15 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                     <h2>Kategori Obat</h2>
                     <p>Kelola kategori produk apotek</p>
                 </div>
+                <?php if (!$isOwner): ?>
                 <button class="btn-add" onclick="openTambah()">
                     <i class="fas fa-plus"></i> Tambah Kategori
                 </button>
+                <?php endif; ?>
             </div>
 
-            <div class="category-grid" id="cat-grid">
-                <?php
-                $iconMap = [
-                    'obat bebas'         => ['fa-pills',                   'blue'],
-                    'obat keras'         => ['fa-prescription-bottle-alt', 'red'],
-                    'herbal'             => ['fa-leaf',                    'green'],
-                    'vitamin'            => ['fa-capsules',                'amber'],
-                    'vitamin & suplemen' => ['fa-capsules',                'amber'],
-                    'suplemen'           => ['fa-dumbbell',                'teal'],
-                    'produk bayi'        => ['fa-baby',                    'purple'],
-                    'antibiotik'         => ['fa-bacteria',                'teal'],
-                    'default'            => ['fa-pills',                   'blue'],
-                ];
-                $colorCycle = ['blue', 'red', 'green', 'amber', 'purple', 'teal', 'pink'];
-                $iconCycle  = ['fa-pills', 'fa-prescription-bottle-alt', 'fa-leaf', 'fa-capsules', 'fa-baby', 'fa-bacteria', 'fa-dumbbell'];
-                $ci = 0;
-
-                foreach ($kategoris as $k):
+            <div class="category-grid">
+                <?php foreach ($kategoris as $k):
                     $key   = strtolower($k['nama_kategori']);
                     $m     = $iconMap[$key] ?? null;
                     $icon  = $m ? $m[0] : $iconCycle[$ci % count($iconCycle)];
@@ -217,6 +231,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                     $ci++;
                 ?>
                     <div class="category-card" id="card-<?= $k['id_kategori'] ?>">
+                        <?php if (!$isOwner): ?>
                         <div class="card-actions">
                             <button class="cact edit" title="Edit"
                                 onclick="openEdit(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
@@ -227,6 +242,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
+                        <?php endif; ?>
                         <div class="cat-icon-wrap <?= $color ?>"><i class="fas <?= $icon ?>"></i></div>
                         <div class="cat-name"><?= htmlspecialchars($k['nama_kategori']) ?></div>
                         <div class="cat-count"><?= $k['jumlah_produk'] ?> Produk</div>
@@ -234,11 +250,13 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
                 <?php endforeach; ?>
 
                 <!-- Card Tambah Baru -->
+                <?php if (!$isOwner): ?>
                 <div class="category-card add-card" onclick="openTambah()">
                     <div class="cat-icon-wrap gray"><i class="fas fa-plus"></i></div>
                     <div class="cat-name">Tambah Baru</div>
                     <div class="cat-count">Buat kategori baru</div>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -299,6 +317,7 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
         const BASE_URL = '<?= basename($_SERVER["PHP_SELF"]) ?>';
         const colorCycle = ['blue', 'red', 'green', 'amber', 'purple', 'teal', 'pink'];
         const iconCycle = ['fa-pills', 'fa-prescription-bottle-alt', 'fa-leaf', 'fa-capsules', 'fa-baby', 'fa-bacteria', 'fa-dumbbell'];
+        const ownerMode = <?= $isOwner ? 'true' : 'false' ?>;
         let cardCount = <?= count($kategoris) ?>;
 
         function openTambah() {
@@ -336,11 +355,12 @@ while ($r = mysqli_fetch_assoc($query)) $kategoris[] = $r;
             div.className = 'category-card';
             div.id = 'card-' + id;
             div.style.cssText = 'opacity:0;transform:scale(.88);transition:opacity .3s,transform .3s';
-            div.innerHTML = `
-        <div class="card-actions">
-            <button class="cact edit" onclick="openEdit(${id},'${nama.replace(/'/g,"\\'")}',event)"><i class="fas fa-edit"></i></button>
-            <button class="cact del"  onclick="confirmHapus(${id},'${nama.replace(/'/g,"\\'")}',event)"><i class="fas fa-trash"></i></button>
-        </div>
+            const actions = ownerMode ? '' : `
+                <div class="card-actions">
+                    <button class="cact edit" onclick="openEdit(${id},'${nama.replace(/'/g,"\\'")}',event)"><i class="fas fa-edit"></i></button>
+                    <button class="cact del" onclick="confirmHapus(${id},'${nama.replace(/'/g,"\\'")}',event)"><i class="fas fa-trash"></i></button>
+                </div>`;
+            div.innerHTML = `${actions}
         <div class="cat-icon-wrap ${color}"><i class="fas ${icon}"></i></div>
         <div class="cat-name">${nama}</div>
         <div class="cat-count">0 Produk</div>`;

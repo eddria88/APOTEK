@@ -7,7 +7,7 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-if ($_SESSION['role'] != "gudang" && $_SESSION['role'] != "owner") {
+if ($_SESSION['role'] != "gudang" && $_SESSION['role'] != "owner" && $_SESSION['role'] != "kasir") {
     header("Location: ../dashboard.php");
     exit;
 }
@@ -15,6 +15,7 @@ if ($_SESSION['role'] != "gudang" && $_SESSION['role'] != "owner") {
 $username = $_SESSION['user'];
 $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'");
 $user = mysqli_fetch_assoc($queryUser);
+$isOwner = $user['role'] === 'owner';
 
 if (isset($_GET['get_batch'])) {
 
@@ -41,6 +42,10 @@ if (isset($_GET['get_batch'])) {
 // ── AJAX: Simpan Pembelian ──
 if (isset($_POST['ajax_simpan'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
 
     $tanggal      = $_POST['tanggal'];
     $id_supplier  = $_POST['id_supplier'];
@@ -96,6 +101,10 @@ if (isset($_POST['ajax_simpan'])) {
 // ── AJAX: Bayar Hutang ──
 if (isset($_POST['ajax_bayar'])) {
     header('Content-Type: application/json');
+    if ($isOwner) {
+        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+        exit;
+    }
 
     $id_pembelian = (int) $_POST['id_pembelian'];
     $bayar_tambah = (float) str_replace(',', '.', $_POST['bayar_tambah']);
@@ -163,7 +172,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
     <!-- Navigation -->
     <nav class="topnav">
         <a href="../dashboard.php" class="sb-brand">
-            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 125px;" class="logo">
+            <img src="../uploads/logo.png" alt="Logo Apotek" style="height: 50px;" class="logo">
         </a>
         <div class="breadcrumb">
             <i class="fas fa-chevron-right"></i>
@@ -208,6 +217,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
+            <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <?php endif; ?>
             <div class="sb-footer">
@@ -219,6 +229,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         <!-- MAIN -->
         <div class="main-content">
 
+                <?php if (!$isOwner): ?>
             <div class="tabs-bar">
                 <button class="tab-btn active" onclick="switchTab('beli',this)">
                     <i class="fas fa-cash-register"></i> Transaksi Pembelian
@@ -227,9 +238,10 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                     <i class="fas fa-history"></i> Riwayat Pembelian
                 </button>
             </div>
+            <?php endif; ?>
 
             <!-- TAB: FORM PEMBELIAN -->
-            <div id="tab-beli" style="padding:20px;display:flex;flex-direction:column;gap:20px;">
+            <div id="tab-beli" style="padding:20px;flex-direction:column;gap:20px;<?= $isOwner ? 'display:none;' : 'display:flex;' ?>">
 
                 <div class="form-grid">
 
@@ -240,11 +252,11 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Tanggal Pembelian</label>
-                                <input type="date" id="f-tanggal" class="form-input" value="<?= date('Y-m-d') ?>">
+                                <input type="date" id="f-tanggal" class="form-input" value="<?= date('Y-m-d') ?>" <?= $isOwner ? 'disabled' : '' ?>>
                             </div>
                             <div class="form-group">
                                 <label>Supplier</label>
-                                <select id="f-supplier" class="form-select">
+                                <select id="f-supplier" class="form-select" <?= $isOwner ? 'disabled' : '' ?> >
                                     <option value="">-- Pilih Supplier --</option>
                                     <?php while ($s = mysqli_fetch_assoc($supplierResult)): ?>
                                         <option value="<?= $s['id_supplier'] ?>"><?= htmlspecialchars($s['nama_supplier']) ?></option>
@@ -255,7 +267,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
                         <div class="form-group">
                             <label>Obat</label>
-                            <select id="f-obat" class="form-select" onchange="generateBatch()">
+                            <select id="f-obat" class="form-select" onchange="generateBatch()" <?= $isOwner ? 'disabled' : '' ?> >
                                 <option value="">-- Pilih Obat --</option>
                                 <?php while ($o = mysqli_fetch_assoc($obatResult)): ?>
                                     <option value="<?= $o['id_obat'] ?>"><?= htmlspecialchars($o['nama_obat']) ?></option>
@@ -270,18 +282,18 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                             </div>
                             <div class="form-group">
                                 <label>Expired Date</label>
-                                <input type="date" id="f-expired" class="form-input">
+                                <input type="date" id="f-expired" class="form-input" <?= $isOwner ? 'disabled' : '' ?>>
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Jumlah (pcs)</label>
-                                <input type="number" id="f-jumlah" class="form-input" placeholder="0" min="1" oninput="calcTotal()">
+                                <input type="number" id="f-jumlah" class="form-input" placeholder="0" min="1" oninput="calcTotal()" <?= $isOwner ? 'disabled' : '' ?>>
                             </div>
                             <div class="form-group">
                                 <label>Harga Beli / pcs</label>
-                                <input type="number" id="f-harga" class="form-input" placeholder="0" min="0" oninput="calcTotal()">
+                                <input type="number" id="f-harga" class="form-input" placeholder="0" min="0" oninput="calcTotal()" <?= $isOwner ? 'disabled' : '' ?>>
                             </div>
                         </div>
 
@@ -292,7 +304,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
                         <div class="form-group">
                             <label>Dibayar Sekarang</label>
-                            <input type="number" id="f-dibayar" class="form-input" placeholder="0" min="0" oninput="calcSisa()">
+                            <input type="number" id="f-dibayar" class="form-input" placeholder="0" min="0" oninput="calcSisa()" <?= $isOwner ? 'disabled' : '' ?>>
                         </div>
 
                         <div class="sisa-preview" id="sisa-preview" style="display:none">
@@ -300,8 +312,8 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                             <span id="preview-sisa">Rp 0</span>
                         </div>
 
-                        <button class="btn-full btn-primary" onclick="submitPembelian()">
-                            <i class="fas fa-save"></i> Simpan Pembelian
+                        <button class="btn-full btn-primary" onclick="submitPembelian()" <?= $isOwner ? 'disabled title="Owner hanya monitoring"' : '' ?> >
+                            <i class="fas fa-save"></i> <?= $isOwner ? 'Monitoring' : 'Simpan Pembelian' ?>
                         </button>
                     </div>
 
@@ -339,9 +351,13 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                                             </div>
                                             <div style="display:flex;align-items:center;gap:10px">
                                                 <span class="sisa-amount" style="font-size:13px">Rp <?= number_format($r['sisa'], 0, ',', '.') ?></span>
+                                                <?php if (!$isOwner): ?>
                                                 <button class="btn-bayar" onclick="openBayarModal(<?= $r['id_pembelian'] ?>, '<?= addslashes($r['nama_obat']) ?>', <?= number_format((float)$r['sisa'], 2, '.', '') ?>)">
                                                     Bayar
                                                 </button>
+                                                <?php else: ?>
+                                                <span style="font-size:12px;color:var(--muted)">Monitoring</span>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
@@ -382,7 +398,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
             </div><!-- end tab-beli -->
 
             <!-- TAB: HISTORY -->
-            <div id="tab-history" style="padding:20px;display:none;">
+            <div id="tab-history" style="padding:20px;<?= $isOwner ? 'display:block;' : 'display:none;' ?>">
                 <div class="history-card">
                     <div class="history-card-header">
                         <i class="fas fa-table"></i> Riwayat Pembelian
@@ -502,6 +518,8 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
     <div class="toast" id="toast"></div>
 
     <script>
+        const ownerMode = <?= $isOwner ? 'true' : 'false' ?>;
+
         function switchTab(tab, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -539,6 +557,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
         // ── Submit Pembelian ──
         function submitPembelian() {
+            if (ownerMode) return;
             const tanggal = document.getElementById('f-tanggal').value;
             const id_supplier = document.getElementById('f-supplier').value;
             const id_obat = document.getElementById('f-obat').value;
@@ -699,6 +718,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         });
 
         function generateBatch() {
+            if (ownerMode) return;
 
             const obat = document.getElementById('f-obat').value;
 
