@@ -180,7 +180,9 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
+            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+          
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
