@@ -18,11 +18,8 @@ $user = mysqli_fetch_assoc($queryUser);
 $isOwner = $user['role'] === 'owner';
 
 if (isset($_GET['get_batch'])) {
-
     header('Content-Type: application/json');
-
     $id_obat = $_GET['id_obat'];
-
     $q = mysqli_query($conn, "SELECT MAX(CAST(batch AS UNSIGNED)) as last_batch FROM pembelian WHERE id_obat='$id_obat'
     ");
 

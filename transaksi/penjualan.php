@@ -186,22 +186,22 @@ $historyResult = mysqli_query(
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="../master/kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
-            <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+                <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
             <a class="sb-link" href="../master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="../master/member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link active" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-            <div class="sb-sec">Laporan</div>
-            <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-            <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-            <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <a class="sb-link active" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <div class="sb-sec">Laporan</div>
+                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
+                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
+                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link active" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <a class="sb-link active" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -212,11 +212,11 @@ $historyResult = mysqli_query(
         <!-- MAIN -->
         <div class="main-content">
 
-                <?php if (!$isOwner): ?>
-            <div class="tabs-bar">
-                <button class="tab-btn active" onclick="switchTab('pos',this)"><i class="fas fa-cash-register"></i> Kasir / Transaksi</button>
-                <button class="tab-btn" onclick="switchTab('history',this)"><i class="fas fa-history"></i> Riwayat Penjualan</button>
-            </div>
+            <?php if (!$isOwner): ?>
+                <div class="tabs-bar">
+                    <button class="tab-btn active" onclick="switchTab('pos',this)"><i class="fas fa-cash-register"></i> Kasir / Transaksi</button>
+                    <button class="tab-btn" onclick="switchTab('history',this)"><i class="fas fa-history"></i> Riwayat Penjualan</button>
+                </div>
             <?php endif; ?>
 
             <!-- POS -->
@@ -472,6 +472,11 @@ $historyResult = mysqli_query(
 
         // ── Diskon 1-5% berdasarkan subtotal ──
         function getDiscRate(sub) {
+            if (sub >= 1000000) return 10;
+            if (sub >= 900000) return 9;
+            if (sub >= 800000) return 8;
+            if (sub >= 700000) return 7;
+            if (sub >= 600000) return 6;
             if (sub >= 500000) return 5;
             if (sub >= 200000) return 4;
             if (sub >= 100000) return 3;
