@@ -200,7 +200,7 @@ $historyResult = mysqli_query(
                 <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
                 <div class="sb-sec">Transaksi</div>
-                <a class="sb-link" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                
                 <a class="sb-link active" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <?php endif; ?>
             <div class="sb-footer">
