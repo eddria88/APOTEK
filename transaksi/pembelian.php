@@ -7,7 +7,7 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-if ($_SESSION['role'] != "gudang" && $_SESSION['role'] != "owner" && $_SESSION['role'] != "kasir") {
+if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "owner") {
     header("Location: ../dashboard.php");
     exit;
 }
@@ -212,6 +212,9 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
             <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
             <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
             <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+            <?php elseif ($user['role'] == 'admin'): ?>
+            <div class="sb-sec">Transaksi</div>
+            <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
             <div class="sb-sec">Transaksi</div>
             <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
