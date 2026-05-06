@@ -115,6 +115,43 @@ $offset    = ($page - 1) * $perPage;
 $query   = mysqli_query($conn, "SELECT * FROM member $where ORDER BY id_member DESC LIMIT $perPage OFFSET $offset");
 $members = [];
 while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
+
+// AJAX: Riwayat Transaksi
+if (isset($_POST['ajax_riwayat'])) {
+    header('Content-Type: application/json');
+    $id = (int)($_POST['id_member'] ?? 0);
+    if ($id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'ID tidak valid.']);
+        exit;
+    }
+
+    $q = mysqli_query($conn, "
+        SELECT p.id_penjualan, p.tanggal, p.total, p.bayar, p.kembalian, 
+               p.metode_pembayaran, u.nama_user
+        FROM penjualan p
+        LEFT JOIN users u ON u.id_user = p.id_user
+        WHERE p.id_member = '$id'
+        ORDER BY p.tanggal DESC
+        LIMIT 30
+    ");
+
+    $rows = [];
+    while ($r = mysqli_fetch_assoc($q)) $rows[] = $r;
+
+    $total_belanja = mysqli_fetch_assoc(mysqli_query(
+        $conn,
+        "SELECT SUM(total) as total_sum, COUNT(*) as jumlah 
+         FROM penjualan WHERE id_member = '$id'"
+    ));;
+
+    echo json_encode([
+        'success'       => true,
+        'data'          => $rows,
+        'total_belanja' => $total_belanja['total_sum'] ?? 0,
+        'jumlah_transaksi' => $total_belanja['jumlah'] ?? 0
+    ]);
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -166,23 +203,21 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
-            <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+                <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link active" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-            <div class="sb-sec">Laporan</div>
-            <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-            <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-            <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <div class="sb-sec">Laporan</div>
+                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
+                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
+                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-          
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -198,9 +233,9 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                     <p>Kelola data member apotek</p>
                 </div>
                 <?php if (!$isOwner): ?>
-                <button class="btn-add" onclick="openModal('m-tambah')">
-                    <i class="fas fa-plus"></i> Tambah Member
-                </button>
+                    <button class="btn-add" onclick="openModal('m-tambah')">
+                        <i class="fas fa-plus"></i> Tambah Member
+                    </button>
                 <?php endif; ?>
             </div>
 
@@ -259,17 +294,21 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
                                         <td class="td-muted"><?= $tgl ?></td>
                                         <td>
                                             <div class="action-cell">
-                                            <?php if (!$isOwner): ?>
-                                            <button class="btn-icon blue" title="Edit"
-                                                onclick="openEdit(<?= $m['id_member'] ?>,'<?= addslashes(htmlspecialchars($m['nama_lengkap'])) ?>','<?= addslashes(htmlspecialchars($m['no_hp'])) ?>','<?= addslashes(htmlspecialchars($m['alamat'])) ?>')">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn-icon red" title="Hapus"
-                                                onclick="confirmHapus(<?= $m['id_member'] ?>,'<?= addslashes(htmlspecialchars($m['nama_lengkap'])) ?>')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                            <?php endif; ?>
-                                        </div>
+                                                <?php if (!$isOwner): ?>
+                                                    <button class="btn-icon blue" title="Edit"
+                                                        onclick="openEdit(<?= $m['id_member'] ?>,'<?= addslashes(htmlspecialchars($m['nama_lengkap'])) ?>','<?= addslashes(htmlspecialchars($m['no_hp'])) ?>','<?= addslashes(htmlspecialchars($m['alamat'])) ?>')">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn-icon red" title="Hapus"
+                                                        onclick="confirmHapus(<?= $m['id_member'] ?>,'<?= addslashes(htmlspecialchars($m['nama_lengkap'])) ?>')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                <?php endif; ?>
+                                                <button class="btn-icon green" title="Riwayat Transaksi"
+                                                    onclick="lihatRiwayat(<?= $m['id_member'] ?>,'<?= addslashes(htmlspecialchars($m['nama_lengkap'])) ?>')">
+                                                    <i class="fas fa-history"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                             <?php endforeach;
@@ -357,6 +396,49 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             <div class="mfooter">
                 <button class="mbtn secondary" onclick="closeModal('m-hapus')">Batal</button>
                 <button class="mbtn danger" onclick="submitHapus()"><i class="fas fa-trash"></i> Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RIWAYAT -->
+    <div class="modal-overlay" id="m-riwayat">
+        <div class="modal-box" style="width:900px;max-width:95vw">
+            <div class="modal-head">
+                <h3><i class="fas fa-history"></i> Riwayat Transaksi</h3>
+                <button class="btn-close-modal" onclick="closeModal('m-riwayat')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Info Member -->
+            <div id="riwayat-info" style="
+            display:flex;gap:16px;margin-bottom:16px;
+            background:var(--bg);border-radius:10px;padding:14px 16px">
+                <div style="flex:1;text-align:center">
+                    <div style="font-size:12px;color:var(--muted);margin-bottom:2px">Member</div>
+                    <div style="font-weight:700;font-size:15px" id="riwayat-nama">—</div>
+                </div>
+                <div style="width:1px;background:var(--border)"></div>
+                <div style="flex:1;text-align:center">
+                    <div style="font-size:12px;color:var(--muted);margin-bottom:2px">Total Transaksi</div>
+                    <div style="font-weight:700;font-size:15px" id="riwayat-jumlah">—</div>
+                </div>
+                <div style="width:1px;background:var(--border)"></div>
+                <div style="flex:1;text-align:center">
+                    <div style="font-size:12px;color:var(--muted);margin-bottom:2px">Total Belanja</div>
+                    <div style="font-weight:700;font-size:15px;color:var(--green)" id="riwayat-total">—</div>
+                </div>
+            </div>
+
+            <!-- Tabel -->
+            <div id="riwayat-body" style="overflow-x:auto;min-height:100px">
+                <p style="text-align:center;color:var(--muted);padding:30px 0">
+                    <i class="fas fa-spinner fa-spin"></i> Memuat...
+                </p>
+            </div>
+
+            <div class="mfooter" style="margin-top:16px">
+                <button class="mbtn secondary" onclick="closeModal('m-riwayat')">Tutup</button>
             </div>
         </div>
     </div>
@@ -499,6 +581,8 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             }).catch(() => showToast('Koneksi gagal.', true));
         }
 
+
+
         // ── EXPORT CSV ──
         function exportCSV() {
             const rows = [
@@ -526,6 +610,97 @@ while ($r = mysqli_fetch_assoc($query)) $members[] = $r;
             var w = document.getElementById('ddwrap');
             if (w && !w.contains(e.target)) document.getElementById('ddmenu').style.display = 'none';
         });
+
+        // ── RIWAYAT TRANSAKSI ──
+        function lihatRiwayat(id, nama) {
+            document.getElementById('riwayat-nama').textContent = nama;
+            document.getElementById('riwayat-jumlah').textContent = '—';
+            document.getElementById('riwayat-total').textContent = '—';
+            document.getElementById('riwayat-body').innerHTML =
+                '<p style="text-align:center;color:var(--muted);padding:30px 0">' +
+                '<i class="fas fa-spinner fa-spin"></i> Memuat...</p>';
+            openModal('m-riwayat');
+
+            const fd = new FormData();
+            fd.append('ajax_riwayat', '1');
+            fd.append('id_member', id);
+
+            fetch(BASE_URL, {
+                    method: 'POST',
+                    body: fd
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.success) {
+                        document.getElementById('riwayat-body').innerHTML =
+                            '<p style="text-align:center;color:red;padding:20px">Gagal memuat data.</p>';
+                        return;
+                    }
+
+                    // Update summary
+                    const fmt = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+                    document.getElementById('riwayat-jumlah').textContent = d.jumlah_transaksi + ' transaksi';
+                    document.getElementById('riwayat-total').textContent = fmt(d.total_belanja);
+
+                    if (d.data.length === 0) {
+                        document.getElementById('riwayat-body').innerHTML =
+                            '<div class="empty-state" style="padding:30px 0">' +
+                            '<i class="fas fa-receipt"></i><p>Belum ada transaksi.</p></div>';
+                        return;
+                    }
+
+                    // Badge warna metode pembayaran
+                    const metodeBadge = m => {
+                        const map = {
+                            'Tunai': ['#e8f5e9', '#2e7d32'],
+                            'Tranfer_Bank': ['#e3f2fd', '#1565c0'],
+                            'E_Wallet': ['#f3e5f5', '#6a1b9a']
+                        };
+                        const [bg, color] = map[m] || ['#f5f5f5', '#555'];
+                        const label = m.replace('_', ' ');
+                        return `<span style="background:${bg};color:${color};
+                    padding:2px 10px;border-radius:20px;font-size:12px;
+                    font-weight:600">${label}</span>`;
+                    };
+
+                    let html = `<table class="dtable">
+                <thead><tr>
+                    <th>ID</th>
+                    <th>Tanggal</th>
+                    <th>Total</th>
+                    <th>Bayar</th>
+                    <th>Kembalian</th>
+                    <th>Metode</th>
+                    <th>Kasir</th>
+                </tr></thead><tbody>`;
+
+                    d.data.forEach(r => {
+                        const tgl = new Date(r.tanggal).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        html += `<tr>
+                    <td><span class="id-mono">#${r.id_penjualan}</span></td>
+                    <td class="td-muted" style="white-space:nowrap">${tgl}</td>
+                    <td class="td-bold">${fmt(r.total)}</td>
+                    <td class="td-muted">${fmt(r.bayar)}</td>
+                    <td class="td-muted">${fmt(r.kembalian)}</td>
+                    <td>${metodeBadge(r.metode_pembayaran)}</td>
+                    <td class="td-muted">${r.nama_user ?? '—'}</td>
+                </tr>`;
+                    });
+
+                    html += '</tbody></table>';
+                    document.getElementById('riwayat-body').innerHTML = html;
+                })
+                .catch(() => {
+                    document.getElementById('riwayat-body').innerHTML =
+                        '<p style="text-align:center;color:red;padding:20px">Koneksi gagal.</p>';
+                });
+        }
     </script>
 </body>
 

@@ -18,11 +18,10 @@ $user = mysqli_fetch_assoc($queryUser);
 $isOwner   = $user['role'] === 'owner';
 
 // AJAX: Tambah
-// AJAX: Tambah
 if (isset($_POST['ajax_tambah'])) {
     header('Content-Type: application/json');
-    if ($isOwner) {
-        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+    if ($user['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'Hanya admin yang boleh menambah kategori.']);
         exit;
     }
     ob_start();
@@ -217,7 +216,7 @@ $ci = 0;
                     <h2>Kategori Obat</h2>
                     <p>Kelola kategori produk apotek</p>
                 </div>
-                <?php if (!$isOwner): ?>
+                <?php if ($user['role'] == 'admin'): ?>
                 <button class="btn-add" onclick="openTambah()">
                     <i class="fas fa-plus"></i> Tambah Kategori
                 </button>
@@ -232,27 +231,29 @@ $ci = 0;
                     $color = $m ? $m[1] : $colorCycle[$ci % count($colorCycle)];
                     $ci++;
                 ?>
-                    <div class="category-card" id="card-<?= $k['id_kategori'] ?>">
-                        <?php if (!$isOwner): ?>
-                        <div class="card-actions">
-                            <button class="cact edit" title="Edit"
-                                onclick="openEdit(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="cact del" title="Hapus"
-                                onclick="confirmHapus(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                        <?php endif; ?>
-                        <div class="cat-icon-wrap <?= $color ?>"><i class="fas <?= $icon ?>"></i></div>
-                        <div class="cat-name"><?= htmlspecialchars($k['nama_kategori']) ?></div>
-                        <div class="cat-count"><?= $k['jumlah_produk'] ?> Produk</div>
-                    </div>
+<div class="category-card" id="card-<?= $k['id_kategori'] ?>"
+     onclick="window.location.href='obat.php?kategori=<?= $k['id_kategori'] ?>'"
+     style="cursor:pointer">
+    <?php if (!$isOwner): ?>
+    <div class="card-actions">
+        <button class="cact edit" title="Edit"
+            onclick="openEdit(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
+            <i class="fas fa-edit"></i>
+        </button>
+        <button class="cact del" title="Hapus"
+            onclick="confirmHapus(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+    <?php endif; ?>
+    <div class="cat-icon-wrap <?= $color ?>"><i class="fas <?= $icon ?>"></i></div>
+    <div class="cat-name"><?= htmlspecialchars($k['nama_kategori']) ?></div>
+    <div class="cat-count"><?= $k['jumlah_produk'] ?> Produk</div>
+</div>
                 <?php endforeach; ?>
 
                 <!-- Card Tambah Baru -->
-                <?php if (!$isOwner): ?>
+                <?php if ($user['role'] == 'admin'): ?>
                 <div class="category-card add-card" onclick="openTambah()">
                     <div class="cat-icon-wrap gray"><i class="fas fa-plus"></i></div>
                     <div class="cat-name">Tambah Baru</div>

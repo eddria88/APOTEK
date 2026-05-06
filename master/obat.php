@@ -53,8 +53,8 @@ function handleUploadGambar($fileKey, $uploadDir)
 // AJAX: Tambah
 if (isset($_POST['ajax_tambah'])) {
     header('Content-Type: application/json');
-    if ($isOwner) {
-        echo json_encode(['success' => false, 'message' => 'Owner tidak memiliki izin mengubah data.']);
+    if ($user['role'] !== 'admin') {
+        echo json_encode(['success' => false, 'message' => 'Hanya admin yang boleh menambah obat.']);
         exit;
     }
     ob_start(); // buffer output agar PHP warning tidak merusak JSON
@@ -327,7 +327,7 @@ $dataResult = mysqli_query(
                     <h2>Data Obat</h2>
                     <p>Kelola data obat dan produk apotek</p>
                 </div>
-                <?php if (!$isOwner): ?>
+                <?php if ($user['role'] == 'admin'): ?>
                 <button class="btn-add" onclick="openModal('m-tambah')">
                     <i class="fas fa-plus"></i> Tambah Obat
                 </button>
