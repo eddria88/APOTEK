@@ -81,26 +81,21 @@ if (isset($_POST['ajax_transaksi'])) {
             exit;
         }
         mysqli_query($conn, "INSERT INTO detail_penjualan (id_penjualan,id_obat,jumlah,harga_jual,subtotal) VALUES ('$id_penjualan','$id_obat','$jumlah','$harga','$subtotal')");
-        $sisa = $jumlah; // jumlah yang dijual
+        $sisa = $jumlah;
 
         $q = mysqli_query($conn, "SELECT * FROM pembelian WHERE id_obat='$id_obat' AND stok_sisa > 0 ORDER BY expired_date ASC, id_pembelian ASC");
 
         while (($row = mysqli_fetch_assoc($q)) && $sisa > 0) {
-
             $stok_batch = $row['jumlah'];
             $ambil = min($stok_batch, $sisa);
-
             mysqli_query($conn, "UPDATE pembelian SET stok_sisa = stok_sisa - $ambil WHERE id_pembelian='{$row['id_pembelian']}'");
-
             mysqli_query($conn, "
-        INSERT INTO stok_keluar (id_obat,tanggal,jumlah,keterangan)
-        VALUES ('$id_obat', NOW(), '$ambil', 'Penjualan ID $id_penjualan')
-    ");
-
+                INSERT INTO stok_keluar (id_obat,tanggal,jumlah,keterangan)
+                VALUES ('$id_obat', NOW(), '$ambil', 'Penjualan ID $id_penjualan')
+            ");
             $sisa -= $ambil;
         }
 
-        // Update stok total obat
         mysqli_query($conn, "UPDATE obat SET stok = stok - $jumlah WHERE id_obat='$id_obat'");
     }
 
@@ -109,12 +104,10 @@ if (isset($_POST['ajax_transaksi'])) {
 }
 
 // ── Fetch data ──
-// Path gambar obat
 $uploadUrl = '../uploads/obat/';
 
 $obatResult = mysqli_query($conn, "SELECT o.*, k.nama_kategori FROM obat o LEFT JOIN kategori k ON o.id_kategori=k.id_kategori WHERE o.stok > 0 ORDER BY o.nama_obat ASC");
 
-// Fetch semua kategori yang punya obat (stok > 0)
 $kategoriResult = mysqli_query($conn, "SELECT DISTINCT k.id_kategori, k.nama_kategori FROM kategori k INNER JOIN obat o ON k.id_kategori=o.id_kategori WHERE o.stok > 0 ORDER BY k.nama_kategori ASC");
 $kategoriList = [];
 while ($k = mysqli_fetch_assoc($kategoriResult)) $kategoriList[] = $k;
@@ -146,6 +139,79 @@ $historyResult = mysqli_query(
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* ── Animasi modal transfer (override skala default) ── */
+        #modal-transfer .modal-box,
+        #modal-ewallet .modal-box {
+            transform: translateY(28px) scale(0.96);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            width: 440px;
+        }
+
+        #modal-transfer.show .modal-box,
+        #modal-ewallet.show .modal-box {
+            transform: translateY(0) scale(1);
+        }
+
+        /* ── Baris info rekening ── */
+        .mt-info-row {
+            display: flex;
+            align-items: center;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13.5px;
+            gap: 8px;
+        }
+
+        .mt-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .mt-info-label {
+            width: 82px;
+            flex-shrink: 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .mt-info-sep {
+            color: var(--muted);
+            flex-shrink: 0;
+            margin-right: 4px;
+        }
+
+        .mt-info-val {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 14.5px;
+        }
+
+        .mt-info-val.mono {
+            font-family: 'DM Mono', monospace, monospace;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Total baris ── */
+        .mt-total-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 8px;
+            margin: 4px 0 22px;
+        }
+
+        .mt-total-label {
+            font-size: 15px;
+            color: var(--muted);
+        }
+
+        .mt-total-val {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--green);
+        }
+    </style>
 </head>
 
 <body>
@@ -165,8 +231,7 @@ $historyResult = mysqli_query(
                     <div class="urole"><?= htmlspecialchars($user['role']) ?></div>
                 </div>
                 <div>
-                    <div class="user-avatar"><?= strtoupper(substr($user['nama_user'], 0, 1)) ?>
-                    </div>
+                    <div class="user-avatar"><?= strtoupper(substr($user['nama_user'], 0, 1)) ?></div>
                     <div class="ddmenu" id="ddmenu">
                         <span class="role-lbl">Role: <?= htmlspecialchars($user['role']) ?></span>
                         <hr>
@@ -178,7 +243,6 @@ $historyResult = mysqli_query(
     </nav>
 
     <div class="app-body">
-
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sb-sec">Core</div>
@@ -190,18 +254,23 @@ $historyResult = mysqli_query(
             <?php endif; ?>
             <a class="sb-link" href="../master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="../master/member.php"><i class="fas fa-user-friends"></i> Member</a>
+
             <?php if ($user['role'] == 'owner'): ?>
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
                 <a class="sb-link active" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
                 <div class="sb-sec">Laporan</div>
                 <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
                 <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
                 <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+            <?php elseif ($user['role'] == 'admin'): ?>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
                 <div class="sb-sec">Transaksi</div>
-                
                 <a class="sb-link active" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -254,10 +323,9 @@ $historyResult = mysqli_query(
                         </div>
                     </div>
                     <div class="cart-footer">
-                        <!-- ── MEMBER DI STRUK ── -->
+                        <!-- Member -->
                         <div style="border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:2px">
                             <span class="pay-label" style="margin-bottom:6px"><i class="fas fa-user-tag" style="color:var(--purple)"></i> Member</span>
-                            <!-- Picker -->
                             <div id="member-picker">
                                 <div style="display:flex;gap:6px">
                                     <select id="member-sel" class="sel-inp" style="font-size:12.5px;padding:7px 10px;flex:1" onchange="selectMember(this.value)" <?= $isOwner ? 'disabled' : '' ?>>
@@ -276,7 +344,6 @@ $historyResult = mysqli_query(
                                 </div>
                                 <p style="font-size:11.5px;color:var(--muted);margin-top:5px"><i class="fas fa-tag" style="color:var(--purple)"></i> Member diskon <strong>1–5%</strong> otomatis</p>
                             </div>
-                            <!-- Active badge -->
                             <div id="member-active" class="hidden">
                                 <div class="member-active" style="padding:8px 12px">
                                     <div class="member-av" id="m-av" style="width:30px;height:30px;font-size:12px">A</div>
@@ -289,6 +356,7 @@ $historyResult = mysqli_query(
                                 </div>
                             </div>
                         </div>
+
                         <div class="sum-row"><span>Subtotal</span><span id="s-subtotal">Rp 0</span></div>
                         <div class="sum-row disc hidden" id="disc-row">
                             <span id="disc-lbl" style="color:var(--purple)">Diskon Member (1%)</span>
@@ -302,6 +370,31 @@ $historyResult = mysqli_query(
                                 <option value="cash">💵 Tunai</option>
                                 <option value="transfer">🏦 Transfer Bank</option>
                                 <option value="ewallet">📱 E-Wallet</option>
+                            </select>
+                        </div>
+
+                        <!-- Pilih Bank (muncul hanya saat Transfer Bank dipilih) -->
+                        <div id="bank-sec" style="display:none;flex-direction:column;gap:4px">
+                            <span class="pay-label">Pilih Bank</span>
+                            <select id="bank-sel" class="sel-inp" onchange="updatePayBtn()" <?= $isOwner ? 'disabled' : '' ?>>
+                                <option value="">-- Pilih Bank --</option>
+                                <option value="BCA">Bank BCA</option>
+                                <option value="BRI">Bank BRI</option>
+                                <option value="Mandiri">Bank Mandiri</option>
+                                <option value="BNI">Bank BNI</option>
+                            </select>
+                        </div>
+
+                        <!-- Pilih Payment E-Wallet (muncul hanya saat E-Wallet dipilih) -->
+                        <div id="ewallet-sec" style="display:none;flex-direction:column;gap:4px">
+                            <span class="pay-label">Pilih Payment</span>
+                            <select id="ewallet-sel" class="sel-inp" onchange="updatePayBtn()" <?= $isOwner ? 'disabled' : '' ?>>
+                                <option value="">-- Pilih Payment --</option>
+                                <option value="Dana">Dana</option>
+                                <option value="OVO">OVO</option>
+                                <option value="GoPay">GoPay</option>
+                                <option value="ShopeePay">ShopeePay</option>
+                                <option value="LinkAja">LinkAja</option>
                             </select>
                         </div>
 
@@ -374,7 +467,9 @@ $historyResult = mysqli_query(
         </div>
     </div>
 
-    <!-- MODAL: Daftar Member Baru -->
+    <!-- ═══════════════════════════════════════════
+         MODAL: Daftar Member Baru
+    ════════════════════════════════════════════ -->
     <div class="modal-overlay" id="modal-reg-member">
         <div class="modal-box" style="text-align:left">
             <div class="modal-icon-circ purple" style="margin-bottom:12px"><i class="fas fa-user-plus"></i></div>
@@ -399,7 +494,9 @@ $historyResult = mysqli_query(
         </div>
     </div>
 
-    <!-- MODAL: Konfirmasi -->
+    <!-- ═══════════════════════════════════════════
+         MODAL: Konfirmasi Tunai / E-Wallet
+    ════════════════════════════════════════════ -->
     <div class="modal-overlay" id="modal-confirm">
         <div class="modal-box">
             <div class="modal-icon-circ green"><i class="fas fa-receipt"></i></div>
@@ -412,10 +509,123 @@ $historyResult = mysqli_query(
         </div>
     </div>
 
-    <!-- MODAL: Sukses + Struk -->
+    <!-- ═══════════════════════════════════════════
+         MODAL: Konfirmasi Transfer Bank  ← BARU
+    ════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-transfer">
+        <div class="modal-box">
+
+            <!-- Icon -->
+            <div class="modal-icon-circ green" style="width:72px;height:72px;font-size:28px;margin-bottom:14px;">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+
+            <!-- Judul -->
+            <div class="modal-ttl">Konfirmasi Pembayaran</div>
+            <div class="modal-sub" style="margin-bottom:20px;">
+                Pastikan transfer ke rekening berikut sebelum memproses
+            </div>
+
+            <!-- Info Rekening -->
+            <div style="background:var(--bg);border-radius:12px;padding:12px 16px;margin-bottom:16px;text-align:left;">
+                <div class="mt-info-row">
+                    <span class="mt-info-label">Bank</span>
+                    <span class="mt-info-sep">:</span>
+                    <span class="mt-info-val" id="mt-bank">—</span>
+                </div>
+                <div class="mt-info-row">
+                    <span class="mt-info-label">No. Rek</span>
+                    <span class="mt-info-sep">:</span>
+                    <span class="mt-info-val mono" id="mt-norek">—</span>
+                </div>
+                <div class="mt-info-row">
+                    <span class="mt-info-label">A/N</span>
+                    <span class="mt-info-sep">:</span>
+                    <span class="mt-info-val" id="mt-an">—</span>
+                </div>
+            </div>
+
+            <!-- Divider dashed -->
+            <div style="border-top:1.5px dashed var(--border);margin:4px 0 14px;"></div>
+
+            <!-- Total -->
+            <div class="mt-total-row">
+                <span class="mt-total-label">Total :</span>
+                <span class="mt-total-val" id="mt-total">Rp -</span>
+            </div>
+
+            <!-- Tombol -->
+            <div class="modal-ft">
+                <button class="mbtn secondary" onclick="closeModal('modal-transfer')">Batal</button>
+                <button class="mbtn primary" onclick="processTrx()">
+                    <i class="fas fa-check" style="margin-right:5px;"></i>Ya, Proses
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         MODAL: Konfirmasi E-Wallet  ← BARU
+    ════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-ewallet">
+        <div class="modal-box">
+
+            <!-- Icon -->
+            <div class="modal-icon-circ green" style="width:72px;height:72px;font-size:28px;margin-bottom:14px;">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+
+            <!-- Judul -->
+            <div class="modal-ttl">Konfirmasi Pembayaran</div>
+            <div class="modal-sub" style="margin-bottom:20px;">
+                Pastikan transfer ke akun berikut sebelum memproses
+            </div>
+
+            <!-- Info E-Wallet -->
+            <div style="background:var(--bg);border-radius:12px;padding:12px 16px;margin-bottom:16px;text-align:left;">
+                <div class="mt-info-row">
+                    <span class="mt-info-label">Payment</span>
+                    <span class="mt-info-sep">:</span>
+                    <span class="mt-info-val" id="ew-payment">—</span>
+                </div>
+                <div class="mt-info-row">
+                    <span class="mt-info-label">No. Rek</span>
+                    <span class="mt-info-sep">:</span>
+                    <span class="mt-info-val mono" id="ew-norek">—</span>
+                </div>
+                <div class="mt-info-row">
+                    <span class="mt-info-label">A/N</span>
+                    <span class="mt-info-sep">:</span>
+                    <span class="mt-info-val" id="ew-an">—</span>
+                </div>
+            </div>
+
+            <!-- Divider dashed -->
+            <div style="border-top:1.5px dashed var(--border);margin:4px 0 14px;"></div>
+
+            <!-- Total -->
+            <div class="mt-total-row">
+                <span class="mt-total-label">Total :</span>
+                <span class="mt-total-val" id="ew-total">Rp -</span>
+            </div>
+
+            <!-- Tombol -->
+            <div class="modal-ft">
+                <button class="mbtn secondary" onclick="closeModal('modal-ewallet')">Batal</button>
+                <button class="mbtn primary" onclick="processTrx()">
+                    <i class="fas fa-check" style="margin-right:5px;"></i>Ya, Proses
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         MODAL: Sukses + Struk
+    ════════════════════════════════════════════ -->
     <div class="modal-overlay" id="modal-success">
         <div class="modal-box" style="width:420px;text-align:left;padding:0;overflow:hidden">
-            <!-- Header struk -->
             <div style="background:var(--green);color:#fff;padding:20px 24px;text-align:center">
                 <div style="font-size:22px;font-weight:800;letter-spacing:-.5px">🌿 APOTEK</div>
                 <div style="font-size:12px;opacity:.85;margin-top:2px">Sistem Manajemen Apotek</div>
@@ -423,13 +633,7 @@ $historyResult = mysqli_query(
                     <i class="fas fa-check-circle"></i> Transaksi Berhasil!
                 </div>
             </div>
-
-            <!-- Body struk -->
-            <div id="struk-body" style="padding:20px 24px;display:flex;flex-direction:column;gap:10px">
-                <!-- diisi JS -->
-            </div>
-
-            <!-- Footer tombol -->
+            <div id="struk-body" style="padding:20px 24px;display:flex;flex-direction:column;gap:10px"></div>
             <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px">
                 <button class="mbtn secondary" style="display:flex;align-items:center;justify-content:center;gap:6px" onclick="printStruk()">
                     <i class="fas fa-print"></i> Print Struk
@@ -441,10 +645,12 @@ $historyResult = mysqli_query(
         </div>
     </div>
 
-    <!-- Area print struk (tersembunyi, hanya muncul saat print) -->
+    <!-- Area print struk (tersembunyi) -->
     <div id="print-area" style="display:none"></div>
 
-    <!-- MODAL: Error -->
+    <!-- ═══════════════════════════════════════════
+         MODAL: Error
+    ════════════════════════════════════════════ -->
     <div class="modal-overlay" id="modal-error">
         <div class="modal-box">
             <div class="modal-icon-circ red"><i class="fas fa-exclamation-triangle"></i></div>
@@ -469,6 +675,59 @@ $historyResult = mysqli_query(
             currentCat = 'Semua',
             searchQ = '';
         let activeMember = null;
+
+        // ── Data rekening bank (sesuaikan dengan rekening apotek) ──
+        const bankRekening = {
+            'BCA': {
+                label: 'Bank BCA',
+                norek: '0921-0000000',
+                an: 'Apotek Healplus'
+            },
+            'BRI': {
+                label: 'Bank BRI',
+                norek: '1234-5678901',
+                an: 'Apotek Healplus'
+            },
+            'Mandiri': {
+                label: 'Bank Mandiri',
+                norek: '9876-5432100',
+                an: 'Apotek Healplus'
+            },
+            'BNI': {
+                label: 'Bank BNI',
+                norek: '1111-2222333',
+                an: 'Apotek Healplus'
+            },
+        };
+
+        // ── Data akun E-Wallet (sesuaikan dengan akun apotek) ──
+        const ewalletData = {
+            'Dana': {
+                label: 'Dana',
+                norek: '+62-890-0000-0000',
+                an: 'Apotek Healplus'
+            },
+            'OVO': {
+                label: 'OVO',
+                norek: '+62-890-0000-0000',
+                an: 'Apotek Healplus'
+            },
+            'GoPay': {
+                label: 'GoPay',
+                norek: '+62-890-0000-0000',
+                an: 'Apotek Healplus'
+            },
+            'ShopeePay': {
+                label: 'ShopeePay',
+                norek: '+62-890-0000-0000',
+                an: 'Apotek Healplus'
+            },
+            'LinkAja': {
+                label: 'LinkAja',
+                norek: '+62-890-0000-0000',
+                an: 'Apotek Healplus'
+            },
+        };
 
         // ── Diskon 1-5% berdasarkan subtotal ──
         function getDiscRate(sub) {
@@ -537,12 +796,10 @@ $historyResult = mysqli_query(
                     method: 'POST',
                     body: fd
                 })
-                .then(r => r.json())
-                .then(d => {
+                .then(r => r.json()).then(d => {
                     if (d.success) {
                         closeModal('modal-reg-member');
                         showToast(d.message);
-                        // Tambah option ke select
                         const sel = document.getElementById('member-sel');
                         const opt = document.createElement('option');
                         opt.value = d.id;
@@ -550,7 +807,6 @@ $historyResult = mysqli_query(
                         opt.dataset.hp = d.no_hp;
                         opt.textContent = `${d.nama} — ${d.no_hp}`;
                         sel.appendChild(opt);
-                        // Langsung aktifkan member baru
                         sel.value = d.id;
                         selectMember(d.id);
                         ['nm-nama', 'nm-hp', 'nm-alamat'].forEach(i => document.getElementById(i).value = '');
@@ -579,11 +835,11 @@ $historyResult = mysqli_query(
                     `<div class="product-icon ${st}">${em}</div>`;
                 const clickAttr = ownerMode ? '' : `onclick="addCart(${p.id_obat})"`;
                 return `<div class="product-card" ${clickAttr}>${badge}
-            ${thumb}
-            <div class="product-name">${p.nama_obat}</div>
-            <div class="product-price">Rp ${fmt(p.harga_jual)}</div>
-            <div class="product-stock">Stok: ${p.stok}</div>
-        </div>`;
+                    ${thumb}
+                    <div class="product-name">${p.nama_obat}</div>
+                    <div class="product-price">Rp ${fmt(p.harga_jual)}</div>
+                    <div class="product-stock">Stok: ${p.stok}</div>
+                </div>`;
             }).join('');
         }
 
@@ -642,17 +898,17 @@ $historyResult = mysqli_query(
                 const item = cart[id];
                 const sub = item.qty * item.harga;
                 return `<div class="cart-item">
-            <div class="cart-item-info">
-                <div class="cart-item-name">${item.nama}</div>
-                <div class="cart-item-price">Rp ${fmt(item.harga)} × ${item.qty}</div>
-            </div>
-            <div class="qty-ctrl">
-                <button class="qty-btn rm" onclick="changeQty(${id},-1)"><i class="fas fa-minus" style="font-size:10px"></i></button>
-                <span class="qty-num">${item.qty}</span>
-                <button class="qty-btn" onclick="changeQty(${id},1)"><i class="fas fa-plus" style="font-size:10px"></i></button>
-            </div>
-            <div class="cart-item-subtotal">Rp ${fmt(sub)}</div>
-        </div>`;
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.nama}</div>
+                        <div class="cart-item-price">Rp ${fmt(item.harga)} × ${item.qty}</div>
+                    </div>
+                    <div class="qty-ctrl">
+                        <button class="qty-btn rm" onclick="changeQty(${id},-1)"><i class="fas fa-minus" style="font-size:10px"></i></button>
+                        <span class="qty-num">${item.qty}</span>
+                        <button class="qty-btn" onclick="changeQty(${id},1)"><i class="fas fa-plus" style="font-size:10px"></i></button>
+                    </div>
+                    <div class="cart-item-subtotal">Rp ${fmt(sub)}</div>
+                </div>`;
             }).join('');
             updateTotals();
         }
@@ -699,8 +955,14 @@ $historyResult = mysqli_query(
             updatePayBtn();
         }
 
+        // ── Toggle tampilan field sesuai metode ──
         function togglePayFields(v) {
             document.getElementById('cash-sec').style.display = v === 'cash' ? 'flex' : 'none';
+            document.getElementById('bank-sec').style.display = v === 'transfer' ? 'flex' : 'none';
+            document.getElementById('ewallet-sec').style.display = v === 'ewallet' ? 'flex' : 'none';
+            // Reset pilihan saat ganti metode
+            if (v !== 'transfer') document.getElementById('bank-sel').value = '';
+            if (v !== 'ewallet') document.getElementById('ewallet-sel').value = '';
             updatePayBtn();
         }
 
@@ -708,39 +970,92 @@ $historyResult = mysqli_query(
             const total = getTotal();
             const method = document.getElementById('pay-method').value;
             let ok = total > 0;
-            if (method === 'cash') ok = ok && (parseFloat(document.getElementById('cash-in').value) || 0) >= total;
+            if (method === 'cash') {
+                ok = ok && (parseFloat(document.getElementById('cash-in').value) || 0) >= total;
+            } else if (method === 'transfer') {
+                ok = ok && document.getElementById('bank-sel').value !== '';
+            } else if (method === 'ewallet') {
+                ok = ok && document.getElementById('ewallet-sel').value !== '';
+            }
             document.getElementById('btn-pay').disabled = !ok;
         }
 
-        // ── TRANSACTION ──
+        // ── KONFIRMASI TRANSAKSI ──
         function confirmTrx() {
             if (ownerMode) return;
-            const total = getTotal(),
-                sub = getSubtotal();
+            const total = getTotal();
+            const sub = getSubtotal();
             const method = document.getElementById('pay-method').value;
-            const bayar = method === 'cash' ? parseFloat(document.getElementById('cash-in').value) : total;
+
+            // ── Transfer Bank → buka modal khusus ──
+            if (method === 'transfer') {
+                const bankKey = document.getElementById('bank-sel').value;
+                const bank = bankRekening[bankKey];
+                if (!bank) {
+                    showToast('Pilih bank terlebih dahulu!', true);
+                    return;
+                }
+
+                document.getElementById('mt-bank').textContent = bank.label;
+                document.getElementById('mt-norek').textContent = bank.norek;
+                document.getElementById('mt-an').textContent = bank.an;
+                document.getElementById('mt-total').textContent =
+                    total > 0 ? 'Rp ' + fmt(total) : 'Rp -';
+
+                openModal('modal-transfer');
+                return;
+            }
+
+            // ── E-Wallet → buka modal khusus ──
+            if (method === 'ewallet') {
+                const ewKey = document.getElementById('ewallet-sel').value;
+                const ew = ewalletData[ewKey];
+                if (!ew) {
+                    showToast('Pilih payment terlebih dahulu!', true);
+                    return;
+                }
+
+                document.getElementById('ew-payment').textContent = ew.label;
+                document.getElementById('ew-norek').textContent = ew.norek;
+                document.getElementById('ew-an').textContent = ew.an;
+                document.getElementById('ew-total').textContent =
+                    total > 0 ? 'Rp ' + fmt(total) : 'Rp -';
+
+                openModal('modal-ewallet');
+                return;
+            }
+
+            // ── Tunai → modal konfirmasi biasa ──
+            const bayar = parseFloat(document.getElementById('cash-in').value);
             let body = `Total: <strong>Rp ${fmt(total)}</strong><br>`;
             if (activeMember) {
                 const r = getDiscRate(sub);
                 body += `Member: <strong>${activeMember.nama}</strong> · Diskon ${r}%<br>`;
             }
-            if (method === 'cash') body += `Bayar: <strong>Rp ${fmt(bayar)}</strong><br>Kembalian: <strong>Rp ${fmt(bayar-total)}</strong>`;
-            else body += `Metode: <strong>${document.getElementById('pay-method').selectedOptions[0].text}</strong>`;
+            body += `Bayar: <strong>Rp ${fmt(bayar)}</strong><br>Kembalian: <strong>Rp ${fmt(bayar - total)}</strong>`;
             document.getElementById('confirm-body').innerHTML = body;
             openModal('modal-confirm');
         }
 
+        // ── PROSES TRANSAKSI (dipanggil dari ketiga modal konfirmasi) ──
         function processTrx() {
             closeModal('modal-confirm');
+            closeModal('modal-transfer');
+            closeModal('modal-ewallet');
+
             const total = getTotal();
             const method = document.getElementById('pay-method').value;
-            const bayar = method === 'cash' ? parseFloat(document.getElementById('cash-in').value) : total;
+            const bayar = method === 'cash' ?
+                parseFloat(document.getElementById('cash-in').value) :
+                total;
+
             const items = Object.values(cart).map(i => ({
                 id_obat: i.id_obat,
                 nama: i.nama,
                 harga: i.harga,
                 jumlah: i.qty
             }));
+
             const fd = new FormData();
             fd.append('ajax_transaksi', '1');
             fd.append('items', JSON.stringify(items));
@@ -748,17 +1063,17 @@ $historyResult = mysqli_query(
             fd.append('bayar', bayar);
             fd.append('metode', method);
             if (activeMember) fd.append('id_member', activeMember.id);
+
             fetch(window.location.href, {
                     method: 'POST',
                     body: fd
                 })
                 .then(r => r.json()).then(data => {
                     if (data.success) {
-                        // Simpan data struk untuk print
                         lastTrxData = {
                             id: data.id_penjualan,
                             tanggal: data.tanggal,
-                            items: items,
+                            items,
                             subtotal: getSubtotal(),
                             total: data.total,
                             bayar: data.bayar,
@@ -793,7 +1108,7 @@ $historyResult = mysqli_query(
             document.getElementById('tab-history').style.display = tab === 'history' ? 'flex' : 'none';
         }
 
-        // ── MODAL ──
+        // ── MODAL helpers ──
         function openModal(id) {
             document.getElementById(id).classList.add('show');
         }
@@ -802,21 +1117,30 @@ $historyResult = mysqli_query(
             document.getElementById(id).classList.remove('show');
         }
 
+        // Tutup modal transfer saat klik overlay
+        document.getElementById('modal-transfer').addEventListener('click', function(e) {
+            if (e.target === this) closeModal('modal-transfer');
+        });
+        // Tutup modal e-wallet saat klik overlay
+        document.getElementById('modal-ewallet').addEventListener('click', function(e) {
+            if (e.target === this) closeModal('modal-ewallet');
+        });
+
         // ── TOAST ──
         function showToast(msg, error = false) {
             const t = document.getElementById('toast');
-            t.innerHTML = `<i class="fas fa-${error?'exclamation-circle':'check-circle'}"></i> ${msg}`;
+            t.innerHTML = `<i class="fas fa-${error ? 'exclamation-circle' : 'check-circle'}"></i> ${msg}`;
             t.className = 'toast show' + (error ? ' error' : '');
             setTimeout(() => t.className = 'toast', 2800);
         }
 
         // ── DROPDOWN ──
         function toggleDropdown() {
-            var m = document.getElementById('ddmenu');
+            const m = document.getElementById('ddmenu');
             m.style.display = m.style.display === 'block' ? 'none' : 'block';
         }
         document.addEventListener('click', function(e) {
-            var w = document.getElementById('ddwrap');
+            const w = document.getElementById('ddwrap');
             if (w && !w.contains(e.target)) document.getElementById('ddmenu').style.display = 'none';
         });
 
@@ -841,81 +1165,63 @@ $historyResult = mysqli_query(
             });
 
             const itemRows = d.items.map(it => `
-        <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0">
-            <div>
-                <div style="font-weight:600">${it.nama}</div>
-                <div style="color:var(--muted);font-size:12px">${it.jumlah} × Rp ${fmt(it.harga)}</div>
-            </div>
-            <div style="font-weight:700;white-space:nowrap;margin-left:12px">Rp ${fmt(it.jumlah * it.harga)}</div>
-        </div>
-    `).join('');
+                <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0">
+                    <div>
+                        <div style="font-weight:600">${it.nama}</div>
+                        <div style="color:var(--muted);font-size:12px">${it.jumlah} × Rp ${fmt(it.harga)}</div>
+                    </div>
+                    <div style="font-weight:700;white-space:nowrap;margin-left:12px">Rp ${fmt(it.jumlah * it.harga)}</div>
+                </div>`).join('');
 
             const diskonRow = d.diskon > 0 ? `
-        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--purple);font-weight:600;padding:3px 0">
-            <span>Diskon Member (${d.discRate}%)</span>
-            <span>- Rp ${fmt(d.diskon)}</span>
-        </div>` : '';
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--purple);font-weight:600;padding:3px 0">
+                    <span>Diskon Member (${d.discRate}%)</span>
+                    <span>- Rp ${fmt(d.diskon)}</span>
+                </div>` : '';
 
             const memberBadge = d.member ? `
-        <div style="background:var(--purple-pale);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px">
-            <i class="fas fa-user-tag" style="color:var(--purple)"></i>
-            <div>
-                <div style="font-size:12px;color:var(--muted)">Member</div>
-                <div style="font-size:13px;font-weight:700;color:var(--purple)">${d.member}</div>
-            </div>
-        </div>` : '';
+                <div style="background:var(--purple-pale);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px">
+                    <i class="fas fa-user-tag" style="color:var(--purple)"></i>
+                    <div>
+                        <div style="font-size:12px;color:var(--muted)">Member</div>
+                        <div style="font-size:13px;font-weight:700;color:var(--purple)">${d.member}</div>
+                    </div>
+                </div>` : '';
 
             const kembalianRow = d.kembalian > 0 ? `
-        <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0">
-            <span style="color:var(--muted)">Kembalian</span>
-            <span style="font-weight:700;color:var(--green)">Rp ${fmt(d.kembalian)}</span>
-        </div>` : '';
+                <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0">
+                    <span style="color:var(--muted)">Kembalian</span>
+                    <span style="font-weight:700;color:var(--green)">Rp ${fmt(d.kembalian)}</span>
+                </div>` : '';
 
             document.getElementById('struk-body').innerHTML = `
-        <!-- Info transaksi -->
-        <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)">
-            <span><i class="fas fa-hashtag"></i> TRX-${String(d.id).padStart(4,'0')}</span>
-            <span>${tglStr}, ${jamStr}</span>
-        </div>
-        <div style="font-size:12.5px;color:var(--muted)">
-            <i class="fas fa-user-circle"></i> Kasir: <strong style="color:var(--text)">${d.kasir}</strong>
-        </div>
-
-        ${memberBadge}
-
-        <!-- Garis pemisah -->
-        <div style="border-top:1.5px dashed var(--border);margin:4px 0"></div>
-
-        <!-- Item-item -->
-        <div style="display:flex;flex-direction:column;gap:4px">
-            ${itemRows}
-        </div>
-
-        <div style="border-top:1.5px dashed var(--border);margin:4px 0"></div>
-
-        <!-- Ringkasan harga -->
-        <div style="display:flex;flex-direction:column;gap:4px">
-            <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0">
-                <span style="color:var(--muted)">Subtotal</span>
-                <span>Rp ${fmt(d.subtotal)}</span>
-            </div>
-            ${diskonRow}
-            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding:6px 0;border-top:1.5px solid var(--border);margin-top:2px">
-                <span>TOTAL</span>
-                <span style="color:var(--green)">Rp ${fmt(d.total)}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0">
-                <span style="color:var(--muted)">${d.metode}</span>
-                <span>Rp ${fmt(d.bayar)}</span>
-            </div>
-            ${kembalianRow}
-        </div>
-
-        <!-- Terima kasih -->
-        <div style="text-align:center;padding:8px 0 2px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:4px">
-            <i class="fas fa-heart" style="color:var(--red)"></i> Terima kasih atas kepercayaan Anda!
-        </div>
-    `;
+                <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)">
+                    <span><i class="fas fa-hashtag"></i> TRX-${String(d.id).padStart(4,'0')}</span>
+                    <span>${tglStr}, ${jamStr}</span>
+                </div>
+                <div style="font-size:12.5px;color:var(--muted)">
+                    <i class="fas fa-user-circle"></i> Kasir: <strong style="color:var(--text)">${d.kasir}</strong>
+                </div>
+                ${memberBadge}
+                <div style="border-top:1.5px dashed var(--border);margin:4px 0"></div>
+                <div style="display:flex;flex-direction:column;gap:4px">${itemRows}</div>
+                <div style="border-top:1.5px dashed var(--border);margin:4px 0"></div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0">
+                        <span style="color:var(--muted)">Subtotal</span><span>Rp ${fmt(d.subtotal)}</span>
+                    </div>
+                    ${diskonRow}
+                    <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding:6px 0;border-top:1.5px solid var(--border);margin-top:2px">
+                        <span>TOTAL</span><span style="color:var(--green)">Rp ${fmt(d.total)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0">
+                        <span style="color:var(--muted)">${d.metode}</span><span>Rp ${fmt(d.bayar)}</span>
+                    </div>
+                    ${kembalianRow}
+                </div>
+                <div style="text-align:center;padding:8px 0 2px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:4px">
+                    <i class="fas fa-heart" style="color:var(--red)"></i> Terima kasih atas kepercayaan Anda!
+                </div>`;
         }
 
         function printStruk() {
@@ -933,80 +1239,51 @@ $historyResult = mysqli_query(
             });
 
             const itemRows = d.items.map(it => `
-        <tr>
-            <td style="padding:4px 0">${it.nama}</td>
-            <td style="text-align:center;padding:4px 8px">${it.jumlah}</td>
-            <td style="text-align:right;padding:4px 0">Rp ${fmt(it.harga)}</td>
-            <td style="text-align:right;padding:4px 0;font-weight:700">Rp ${fmt(it.jumlah * it.harga)}</td>
-        </tr>
-    `).join('');
+                <tr>
+                    <td style="padding:4px 0">${it.nama}</td>
+                    <td style="text-align:center;padding:4px 8px">${it.jumlah}</td>
+                    <td style="text-align:right;padding:4px 0">Rp ${fmt(it.harga)}</td>
+                    <td style="text-align:right;padding:4px 0;font-weight:700">Rp ${fmt(it.jumlah * it.harga)}</td>
+                </tr>`).join('');
 
-            const diskonRow = d.diskon > 0 ? `
-        <tr><td colspan="3" style="padding:3px 0;color:#666">Diskon Member (${d.discRate}%)</td>
-        <td style="text-align:right;padding:3px 0;color:#666">- Rp ${fmt(d.diskon)}</td></tr>` : '';
-
-            const kembalianRow = d.kembalian > 0 ? `
-        <tr><td colspan="3" style="padding:3px 0">Kembalian</td>
-        <td style="text-align:right;padding:3px 0;font-weight:700">Rp ${fmt(d.kembalian)}</td></tr>` : '';
-
+            const diskonRow = d.diskon > 0 ? `<tr><td colspan="3" style="padding:3px 0;color:#666">Diskon Member (${d.discRate}%)</td><td style="text-align:right;padding:3px 0;color:#666">- Rp ${fmt(d.diskon)}</td></tr>` : '';
+            const kembalianRow = d.kembalian > 0 ? `<tr><td colspan="3" style="padding:3px 0">Kembalian</td><td style="text-align:right;padding:3px 0;font-weight:700">Rp ${fmt(d.kembalian)}</td></tr>` : '';
             const memberRow = d.member ? `<p style="margin:2px 0">Member: <strong>${d.member}</strong>${d.discRate > 0 ? ` (Diskon ${d.discRate}%)` : ''}</p>` : '';
 
-            const html = `<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<title>Struk #TRX-${String(d.id).padStart(4,'0')}</title>
+            const html = `<!DOCTYPE html><html><head>
+<meta charset="UTF-8"><title>Struk #TRX-${String(d.id).padStart(4,'0')}</title>
 <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Courier New', monospace; font-size: 13px; color: #000; width: 300px; margin: 0 auto; padding: 16px 8px; }
-    h1 { text-align: center; font-size: 18px; letter-spacing: 1px; margin-bottom: 4px; }
-    .center { text-align: center; }
-    .divider { border-top: 1px dashed #000; margin: 8px 0; }
-    table { width: 100%; border-collapse: collapse; }
-    .total-row td { font-weight: 700; font-size: 14px; border-top: 1px solid #000; padding-top: 4px; }
-    p { margin: 2px 0; font-size: 12px; }
-    @media print {
-        body { margin: 0; width: 80mm; }
-        @page { size: 80mm auto; margin: 0; }
-    }
-</style>
-</head><body>
-    <h1>🌿 APOTEK</h1>
-    <p class="center" style="font-size:11px">Sistem Manajemen Apotek</p>
-    <div class="divider"></div>
-    <p>No. Struk : TRX-${String(d.id).padStart(4,'0')}</p>
-    <p>Tanggal   : ${tglStr}</p>
-    <p>Jam       : ${jamStr}</p>
-    <p>Kasir     : ${d.kasir}</p>
-    ${memberRow}
-    <div class="divider"></div>
-    <table>
-        <thead>
-            <tr>
-                <th style="text-align:left">Item</th>
-                <th style="text-align:center">Qty</th>
-                <th style="text-align:right">Harga</th>
-                <th style="text-align:right">Sub</th>
-            </tr>
-        </thead>
-        <tbody>${itemRows}</tbody>
-    </table>
-    <div class="divider"></div>
-    <table>
-        <tr><td colspan="3" style="padding:3px 0">Subtotal</td>
-            <td style="text-align:right;padding:3px 0">Rp ${fmt(d.subtotal)}</td></tr>
-        ${diskonRow}
-        <tr class="total-row">
-            <td colspan="3" style="padding:6px 0 3px">TOTAL</td>
-            <td style="text-align:right;padding:6px 0 3px">Rp ${fmt(d.total)}</td>
-        </tr>
-        <tr><td colspan="3" style="padding:3px 0">${d.metode}</td>
-            <td style="text-align:right;padding:3px 0">Rp ${fmt(d.bayar)}</td></tr>
-        ${kembalianRow}
-    </table>
-    <div class="divider"></div>
-    <p class="center" style="margin-top:8px">*** Terima Kasih ***</p>
-    <p class="center">Semoga lekas sembuh 💊</p>
-    <p class="center" style="font-size:10px;margin-top:6px;color:#666">Simpan struk ini sebagai bukti pembelian</p>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Courier New',monospace;font-size:13px;color:#000;width:300px;margin:0 auto;padding:16px 8px}
+h1{text-align:center;font-size:18px;letter-spacing:1px;margin-bottom:4px}
+.center{text-align:center}.divider{border-top:1px dashed #000;margin:8px 0}
+table{width:100%;border-collapse:collapse}.total-row td{font-weight:700;font-size:14px;border-top:1px solid #000;padding-top:4px}
+p{margin:2px 0;font-size:12px}
+@media print{body{margin:0;width:80mm}@page{size:80mm auto;margin:0}}
+</style></head><body>
+<h1>🌿 APOTEK</h1>
+<p class="center" style="font-size:11px">Sistem Manajemen Apotek</p>
+<div class="divider"></div>
+<p>No. Struk : TRX-${String(d.id).padStart(4,'0')}</p>
+<p>Tanggal   : ${tglStr}</p><p>Jam       : ${jamStr}</p>
+<p>Kasir     : ${d.kasir}</p>${memberRow}
+<div class="divider"></div>
+<table><thead><tr>
+    <th style="text-align:left">Item</th><th style="text-align:center">Qty</th>
+    <th style="text-align:right">Harga</th><th style="text-align:right">Sub</th>
+</tr></thead><tbody>${itemRows}</tbody></table>
+<div class="divider"></div>
+<table>
+<tr><td colspan="3" style="padding:3px 0">Subtotal</td><td style="text-align:right;padding:3px 0">Rp ${fmt(d.subtotal)}</td></tr>
+${diskonRow}
+<tr class="total-row"><td colspan="3" style="padding:6px 0 3px">TOTAL</td><td style="text-align:right;padding:6px 0 3px">Rp ${fmt(d.total)}</td></tr>
+<tr><td colspan="3" style="padding:3px 0">${d.metode}</td><td style="text-align:right;padding:3px 0">Rp ${fmt(d.bayar)}</td></tr>
+${kembalianRow}
+</table>
+<div class="divider"></div>
+<p class="center" style="margin-top:8px">*** Terima Kasih ***</p>
+<p class="center">Semoga lekas sembuh 💊</p>
+<p class="center" style="font-size:10px;margin-top:6px;color:#666">Simpan struk ini sebagai bukti pembelian</p>
 </body></html>`;
 
             const win = window.open('', '_blank', 'width=400,height=600');

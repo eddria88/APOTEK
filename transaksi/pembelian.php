@@ -194,31 +194,34 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
     </nav>
 
     <div class="app-body">
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="../master/kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
-            <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+                <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
             <a class="sb-link" href="../master/obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="../master/member.php"><i class="fas fa-user-friends"></i> Member</a>
+
             <?php if ($user['role'] == 'owner'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-            <div class="sb-sec">Laporan</div>
-            <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-            <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-            <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
+                <div class="sb-sec">Laporan</div>
+                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
+                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
+                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'admin'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link active" href="pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -229,15 +232,15 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         <!-- MAIN -->
         <div class="main-content">
 
-                <?php if (!$isOwner): ?>
-            <div class="tabs-bar">
-                <button class="tab-btn active" onclick="switchTab('beli',this)">
-                    <i class="fas fa-cash-register"></i> Transaksi Pembelian
-                </button>
-                <button class="tab-btn" onclick="switchTab('history',this)">
-                    <i class="fas fa-history"></i> Riwayat Pembelian
-                </button>
-            </div>
+            <?php if (!$isOwner): ?>
+                <div class="tabs-bar">
+                    <button class="tab-btn active" onclick="switchTab('beli',this)">
+                        <i class="fas fa-cash-register"></i> Transaksi Pembelian
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('history',this)">
+                        <i class="fas fa-history"></i> Riwayat Pembelian
+                    </button>
+                </div>
             <?php endif; ?>
 
             <!-- TAB: FORM PEMBELIAN -->
@@ -256,7 +259,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                             </div>
                             <div class="form-group">
                                 <label>Supplier</label>
-                                <select id="f-supplier" class="form-select" <?= $isOwner ? 'disabled' : '' ?> >
+                                <select id="f-supplier" class="form-select" <?= $isOwner ? 'disabled' : '' ?>>
                                     <option value="">-- Pilih Supplier --</option>
                                     <?php while ($s = mysqli_fetch_assoc($supplierResult)): ?>
                                         <option value="<?= $s['id_supplier'] ?>"><?= htmlspecialchars($s['nama_supplier']) ?></option>
@@ -267,7 +270,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
                         <div class="form-group">
                             <label>Obat</label>
-                            <select id="f-obat" class="form-select" onchange="generateBatch()" <?= $isOwner ? 'disabled' : '' ?> >
+                            <select id="f-obat" class="form-select" onchange="generateBatch()" <?= $isOwner ? 'disabled' : '' ?>>
                                 <option value="">-- Pilih Obat --</option>
                                 <?php while ($o = mysqli_fetch_assoc($obatResult)): ?>
                                     <option value="<?= $o['id_obat'] ?>"><?= htmlspecialchars($o['nama_obat']) ?></option>
@@ -312,7 +315,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                             <span id="preview-sisa">Rp 0</span>
                         </div>
 
-                        <button class="btn-full btn-primary" onclick="submitPembelian()" <?= $isOwner ? 'disabled title="Owner hanya monitoring"' : '' ?> >
+                        <button class="btn-full btn-primary" onclick="submitPembelian()" <?= $isOwner ? 'disabled title="Owner hanya monitoring"' : '' ?>>
                             <i class="fas fa-save"></i> <?= $isOwner ? 'Monitoring' : 'Simpan Pembelian' ?>
                         </button>
                     </div>
@@ -352,11 +355,11 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                                             <div style="display:flex;align-items:center;gap:10px">
                                                 <span class="sisa-amount" style="font-size:13px">Rp <?= number_format($r['sisa'], 0, ',', '.') ?></span>
                                                 <?php if (!$isOwner): ?>
-                                                <button class="btn-bayar" onclick="openBayarModal(<?= $r['id_pembelian'] ?>, '<?= addslashes($r['nama_obat']) ?>', <?= number_format((float)$r['sisa'], 2, '.', '') ?>)">
-                                                    Bayar
-                                                </button>
+                                                    <button class="btn-bayar" onclick="openBayarModal(<?= $r['id_pembelian'] ?>, '<?= addslashes($r['nama_obat']) ?>', <?= number_format((float)$r['sisa'], 2, '.', '') ?>)">
+                                                        Bayar
+                                                    </button>
                                                 <?php else: ?>
-                                                <span style="font-size:12px;color:var(--muted)">Monitoring</span>
+                                                    <span style="font-size:12px;color:var(--muted)">Monitoring</span>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
