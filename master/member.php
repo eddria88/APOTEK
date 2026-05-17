@@ -197,6 +197,7 @@ if (isset($_POST['ajax_riwayat'])) {
     </nav>
 
     <div class="app-body">
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
@@ -211,6 +212,7 @@ if (isset($_POST['ajax_riwayat'])) {
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
                 <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="../transaksi/pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
                 <div class="sb-sec">Laporan</div>
                 <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
                 <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
@@ -221,6 +223,7 @@ if (isset($_POST['ajax_riwayat'])) {
             <?php elseif ($user['role'] == 'kasir'): ?>
                 <div class="sb-sec">Transaksi</div>
                 <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="../transaksi/pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>

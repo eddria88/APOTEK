@@ -7,7 +7,7 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-if($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['role'] != "owner"){
+if ($_SESSION['role'] != "admin" && $_SESSION['role'] != "kasir" && $_SESSION['role'] != "owner") {
     header("Location: ../dashboard.php");
     exit;
 }
@@ -180,31 +180,33 @@ $ci = 0;
     </nav>
 
     <div class="app-body">
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link active" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
-            <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+                <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
             <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-            <div class="sb-sec">Laporan</div>
-            <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-            <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-            <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="../transaksi/pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
+                <div class="sb-sec">Laporan</div>
+                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
+                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
+                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'admin'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-            
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="../transaksi/pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -219,9 +221,9 @@ $ci = 0;
                     <p>Kelola kategori produk apotek</p>
                 </div>
                 <?php if ($user['role'] == 'admin'): ?>
-                <button class="btn-add" onclick="openTambah()">
-                    <i class="fas fa-plus"></i> Tambah Kategori
-                </button>
+                    <button class="btn-add" onclick="openTambah()">
+                        <i class="fas fa-plus"></i> Tambah Kategori
+                    </button>
                 <?php endif; ?>
             </div>
 
@@ -233,34 +235,34 @@ $ci = 0;
                     $color = $m ? $m[1] : $colorCycle[$ci % count($colorCycle)];
                     $ci++;
                 ?>
-<div class="category-card" id="card-<?= $k['id_kategori'] ?>"
-     onclick="window.location.href='obat.php?kategori=<?= $k['id_kategori'] ?>'"
-     style="cursor:pointer">
-    <?php if (!$isOwner): ?>
-    <div class="card-actions">
-        <button class="cact edit" title="Edit"
-            onclick="openEdit(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
-            <i class="fas fa-edit"></i>
-        </button>
-        <button class="cact del" title="Hapus"
-            onclick="confirmHapus(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
-            <i class="fas fa-trash"></i>
-        </button>
-    </div>
-    <?php endif; ?>
-    <div class="cat-icon-wrap <?= $color ?>"><i class="fas <?= $icon ?>"></i></div>
-    <div class="cat-name"><?= htmlspecialchars($k['nama_kategori']) ?></div>
-    <div class="cat-count"><?= $k['jumlah_produk'] ?> Produk</div>
-</div>
+                    <div class="category-card" id="card-<?= $k['id_kategori'] ?>"
+                        onclick="window.location.href='obat.php?kategori=<?= $k['id_kategori'] ?>'"
+                        style="cursor:pointer">
+                        <?php if (!$isOwner): ?>
+                            <div class="card-actions">
+                                <button class="cact edit" title="Edit"
+                                    onclick="openEdit(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="cact del" title="Hapus"
+                                    onclick="confirmHapus(<?= $k['id_kategori'] ?>,'<?= addslashes(htmlspecialchars($k['nama_kategori'])) ?>',event)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                        <div class="cat-icon-wrap <?= $color ?>"><i class="fas <?= $icon ?>"></i></div>
+                        <div class="cat-name"><?= htmlspecialchars($k['nama_kategori']) ?></div>
+                        <div class="cat-count"><?= $k['jumlah_produk'] ?> Produk</div>
+                    </div>
                 <?php endforeach; ?>
 
                 <!-- Card Tambah Baru -->
                 <?php if ($user['role'] == 'admin'): ?>
-                <div class="category-card add-card" onclick="openTambah()">
-                    <div class="cat-icon-wrap gray"><i class="fas fa-plus"></i></div>
-                    <div class="cat-name">Tambah Baru</div>
-                    <div class="cat-count">Buat kategori baru</div>
-                </div>
+                    <div class="category-card add-card" onclick="openTambah()">
+                        <div class="cat-icon-wrap gray"><i class="fas fa-plus"></i></div>
+                        <div class="cat-name">Tambah Baru</div>
+                        <div class="cat-count">Buat kategori baru</div>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>

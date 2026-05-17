@@ -291,31 +291,33 @@ $dataResult = mysqli_query(
     </nav>
 
     <div class="app-body">
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <div class="sb-sec">Master Data</div>
             <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
-            <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+                <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
             <a class="sb-link active" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
             <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-            <div class="sb-sec">Laporan</div>
-            <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-            <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-            <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="../transaksi/pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
+                <div class="sb-sec">Laporan</div>
+                <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
+                <a class="sb-link" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
+                <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
             <?php elseif ($user['role'] == 'admin'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="../transaksi/pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -330,9 +332,9 @@ $dataResult = mysqli_query(
                     <p>Kelola data obat dan produk apotek</p>
                 </div>
                 <?php if ($user['role'] == 'admin'): ?>
-                <button class="btn-add" onclick="openModal('m-tambah')">
-                    <i class="fas fa-plus"></i> Tambah Obat
-                </button>
+                    <button class="btn-add" onclick="openModal('m-tambah')">
+                        <i class="fas fa-plus"></i> Tambah Obat
+                    </button>
                 <?php endif; ?>
             </div>
 
@@ -430,12 +432,12 @@ $dataResult = mysqli_query(
                                         <td>
                                             <div class="action-cell">
                                                 <?php if (!$isOwner): ?>
-                                                <button class="btn-icon blue" title="Edit" onclick="openEdit(<?= $row['id_obat'] ?>)">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn-icon red" title="Hapus" onclick="confirmHapus(<?= $row['id_obat'] ?>, '<?= addslashes($row['nama_obat']) ?>')">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
+                                                    <button class="btn-icon blue" title="Edit" onclick="openEdit(<?= $row['id_obat'] ?>)">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn-icon red" title="Hapus" onclick="confirmHapus(<?= $row['id_obat'] ?>, '<?= addslashes($row['nama_obat']) ?>')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
                                                 <?php endif; ?>
                                             </div>
                                         </td>
