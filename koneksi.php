@@ -1,7 +1,7 @@
 <?php
 $host = "localhost";
-$user = "amel";
-$pass = "12345";
+$user = "root";
+$pass = "";
 $db   = "db_apotek"; 
 
 $conn = mysqli_connect($host, $user, $pass, $db);

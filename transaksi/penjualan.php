@@ -324,7 +324,7 @@ $historyResult = mysqli_query(
             <span class="current">Penjualan</span>
         </div>
         <div class="topnav-right">
-            <div class="user-info" class="ddwrap" id="ddwrap" onclick="toggleDropdown()">
+            <div class="user-info ddwrap" id="ddwrap" onclick="toggleDropdown()">
                 <div class="user-texts">
                     <div class="uname"><?= htmlspecialchars($user['nama_user']) ?></div>
                     <div class="urole"><?= htmlspecialchars($user['role']) ?></div>

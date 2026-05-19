@@ -219,10 +219,9 @@ $batalResult   = mysqli_query($conn, "SELECT p.*,u.nama_user,m.nama_lengkap as n
     </a>
     <div class="breadcrumb">
       <i class="fas fa-chevron-right"></i>
-      <span class="current">Pesanan</span>
+      <span class="current">Penjualan</span>
     </div>
     <div class="topnav-right">
-      <!-- FIX: id disamakan dengan JS (ddwrap/ddmenu), fungsi toggleDropdown() diperbaiki -->
       <div class="user-info ddwrap" id="ddwrap" onclick="toggleDropdown()">
         <div class="user-texts">
           <div class="uname"><?= htmlspecialchars($user['nama_user']) ?></div>
@@ -670,16 +669,15 @@ $batalResult   = mysqli_query($conn, "SELECT p.*,u.nama_user,m.nama_lengkap as n
       return Number(n).toLocaleString('id-ID');
     }
 
-    /* ── [FIX] Dropdown: nama fungsi disesuaikan dengan onclick di HTML ── */
-    function toggleDropdown() {
-      $('ddmenu').classList.toggle('open');
-    }
-    document.addEventListener('click', function(e) {
-      const wrap = $('ddwrap');
-      if (wrap && !wrap.contains(e.target)) {
-        $('ddmenu').classList.remove('open');
-      }
-    });
+        // ── DROPDOWN ──
+        function toggleDropdown() {
+            const m = document.getElementById('ddmenu');
+            m.style.display = m.style.display === 'block' ? 'none' : 'block';
+        }
+        document.addEventListener('click', function(e) {
+            const w = document.getElementById('ddwrap');
+            if (w && !w.contains(e.target)) document.getElementById('ddmenu').style.display = 'none';
+        });
 
     /* ── Member ── */
     function onMember(sel) {
