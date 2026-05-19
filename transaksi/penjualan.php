@@ -104,9 +104,10 @@ if (isset($_POST['ajax_transaksi'])) {
 }
 
 // ── Fetch data ──
+// Ambil SEMUA obat termasuk yang stok = 0, untuk menampilkan badge "Habis"
 $uploadUrl = '../uploads/obat/';
 
-$obatResult = mysqli_query($conn, "SELECT o.*, k.nama_kategori FROM obat o LEFT JOIN kategori k ON o.id_kategori=k.id_kategori WHERE o.stok > 0 ORDER BY o.nama_obat ASC");
+$obatResult = mysqli_query($conn, "SELECT o.*, k.nama_kategori FROM obat o LEFT JOIN kategori k ON o.id_kategori=k.id_kategori ORDER BY o.nama_obat ASC");
 
 $kategoriResult = mysqli_query($conn, "SELECT DISTINCT k.id_kategori, k.nama_kategori FROM kategori k INNER JOIN obat o ON k.id_kategori=o.id_kategori WHERE o.stok > 0 ORDER BY k.nama_kategori ASC");
 $kategoriList = [];
@@ -210,6 +211,104 @@ $historyResult = mysqli_query(
             font-size: 24px;
             font-weight: 800;
             color: var(--green);
+        }
+
+        /* ══════════════════════════════════════
+           STOK HABIS — Card overlay & badge
+        ══════════════════════════════════════ */
+        .product-card.out-of-stock {
+            position: relative;
+            opacity: 0.72;
+            cursor: default !important;
+            pointer-events: none; /* nonaktifkan klik normal */
+        }
+
+        /* Kita butuh pointer-events aktif hanya untuk tombol pesan */
+        .product-card.out-of-stock {
+            pointer-events: all;
+        }
+
+        .product-card.out-of-stock::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.55);
+            border-radius: inherit;
+            pointer-events: none;
+        }
+
+        .badge-habis {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 20px;
+            letter-spacing: .3px;
+            z-index: 2;
+        }
+
+        .btn-pesan-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+            margin-top: 6px;
+            padding: 6px 0;
+            background: linear-gradient(135deg, #f97316, #ef4444);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            position: relative;
+            z-index: 3;
+            transition: opacity .15s;
+        }
+
+        .btn-pesan-card:hover {
+            opacity: .88;
+        }
+
+        /* ══════════════════════════════════════
+           MODAL PESAN — Stok Habis & Stok Kurang
+        ══════════════════════════════════════ */
+        #modal-pesan-habis .modal-box,
+        #modal-pesan-kurang .modal-box {
+            width: 420px;
+            text-align: center;
+        }
+
+        .modal-icon-circ.orange {
+            background: #fff7ed;
+            color: #f97316;
+        }
+
+        .pesan-obat-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin: 8px 0 4px;
+        }
+
+        .pesan-info-box {
+            background: #fff7ed;
+            border: 1.5px solid #fed7aa;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin: 12px 0 18px;
+            font-size: 13px;
+            color: #92400e;
+            line-height: 1.55;
+        }
+
+        .pesan-info-box strong {
+            color: #c2410c;
         }
     </style>
 </head>
@@ -373,7 +472,7 @@ $historyResult = mysqli_query(
                             </select>
                         </div>
 
-                        <!-- Pilih Bank (muncul hanya saat Transfer Bank dipilih) -->
+                        <!-- Pilih Bank -->
                         <div id="bank-sec" style="display:none;flex-direction:column;gap:4px">
                             <span class="pay-label">Pilih Bank</span>
                             <select id="bank-sel" class="sel-inp" onchange="updatePayBtn()" <?= $isOwner ? 'disabled' : '' ?>>
@@ -385,7 +484,7 @@ $historyResult = mysqli_query(
                             </select>
                         </div>
 
-                        <!-- Pilih Payment E-Wallet (muncul hanya saat E-Wallet dipilih) -->
+                        <!-- Pilih E-Wallet -->
                         <div id="ewallet-sec" style="display:none;flex-direction:column;gap:4px">
                             <span class="pay-label">Pilih Payment</span>
                             <select id="ewallet-sel" class="sel-inp" onchange="updatePayBtn()" <?= $isOwner ? 'disabled' : '' ?>>
@@ -510,23 +609,17 @@ $historyResult = mysqli_query(
     </div>
 
     <!-- ═══════════════════════════════════════════
-         MODAL: Konfirmasi Transfer Bank  ← BARU
+         MODAL: Konfirmasi Transfer Bank
     ════════════════════════════════════════════ -->
     <div class="modal-overlay" id="modal-transfer">
         <div class="modal-box">
-
-            <!-- Icon -->
             <div class="modal-icon-circ green" style="width:72px;height:72px;font-size:28px;margin-bottom:14px;">
                 <i class="fas fa-file-invoice-dollar"></i>
             </div>
-
-            <!-- Judul -->
             <div class="modal-ttl">Konfirmasi Pembayaran</div>
             <div class="modal-sub" style="margin-bottom:20px;">
                 Pastikan transfer ke rekening berikut sebelum memproses
             </div>
-
-            <!-- Info Rekening -->
             <div style="background:var(--bg);border-radius:12px;padding:12px 16px;margin-bottom:16px;text-align:left;">
                 <div class="mt-info-row">
                     <span class="mt-info-label">Bank</span>
@@ -544,45 +637,32 @@ $historyResult = mysqli_query(
                     <span class="mt-info-val" id="mt-an">—</span>
                 </div>
             </div>
-
-            <!-- Divider dashed -->
             <div style="border-top:1.5px dashed var(--border);margin:4px 0 14px;"></div>
-
-            <!-- Total -->
             <div class="mt-total-row">
                 <span class="mt-total-label">Total :</span>
                 <span class="mt-total-val" id="mt-total">Rp -</span>
             </div>
-
-            <!-- Tombol -->
             <div class="modal-ft">
                 <button class="mbtn secondary" onclick="closeModal('modal-transfer')">Batal</button>
                 <button class="mbtn primary" onclick="processTrx()">
                     <i class="fas fa-check" style="margin-right:5px;"></i>Ya, Proses
                 </button>
             </div>
-
         </div>
     </div>
 
     <!-- ═══════════════════════════════════════════
-         MODAL: Konfirmasi E-Wallet  ← BARU
+         MODAL: Konfirmasi E-Wallet
     ════════════════════════════════════════════ -->
     <div class="modal-overlay" id="modal-ewallet">
         <div class="modal-box">
-
-            <!-- Icon -->
             <div class="modal-icon-circ green" style="width:72px;height:72px;font-size:28px;margin-bottom:14px;">
                 <i class="fas fa-file-invoice-dollar"></i>
             </div>
-
-            <!-- Judul -->
             <div class="modal-ttl">Konfirmasi Pembayaran</div>
             <div class="modal-sub" style="margin-bottom:20px;">
                 Pastikan transfer ke akun berikut sebelum memproses
             </div>
-
-            <!-- Info E-Wallet -->
             <div style="background:var(--bg);border-radius:12px;padding:12px 16px;margin-bottom:16px;text-align:left;">
                 <div class="mt-info-row">
                     <span class="mt-info-label">Payment</span>
@@ -600,24 +680,94 @@ $historyResult = mysqli_query(
                     <span class="mt-info-val" id="ew-an">—</span>
                 </div>
             </div>
-
-            <!-- Divider dashed -->
             <div style="border-top:1.5px dashed var(--border);margin:4px 0 14px;"></div>
-
-            <!-- Total -->
             <div class="mt-total-row">
                 <span class="mt-total-label">Total :</span>
                 <span class="mt-total-val" id="ew-total">Rp -</span>
             </div>
-
-            <!-- Tombol -->
             <div class="modal-ft">
                 <button class="mbtn secondary" onclick="closeModal('modal-ewallet')">Batal</button>
                 <button class="mbtn primary" onclick="processTrx()">
                     <i class="fas fa-check" style="margin-right:5px;"></i>Ya, Proses
                 </button>
             </div>
+        </div>
+    </div>
 
+    <!-- ═══════════════════════════════════════════
+         MODAL: STOK HABIS → Tawarkan Pesanan
+         (muncul saat klik tombol "Pesan" pada
+          kartu obat yang stok = 0)
+    ════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-pesan-habis">
+        <div class="modal-box">
+            <!-- Icon -->
+            <div class="modal-icon-circ orange" style="width:68px;height:68px;font-size:26px;margin-bottom:10px;">
+                <i class="fas fa-box-open"></i>
+            </div>
+
+            <!-- Judul -->
+            <div class="modal-ttl" style="font-size:17px;">Stok Obat Habis</div>
+
+            <!-- Nama obat ditampilkan dinamis -->
+            <div class="pesan-obat-name" id="ph-nama">—</div>
+
+            <!-- Info box -->
+            <div class="pesan-info-box">
+                <i class="fas fa-info-circle" style="margin-right:5px;color:#f97316"></i>
+                Stok <strong id="ph-nama2">obat ini</strong> saat ini <strong>kosong (0)</strong>.<br>
+                Apakah Anda ingin melakukan <strong>pesanan</strong> ? <br>
+                akan tetapi kedatangan barang kurang lebih 1 minggu setelah pesanan dibuat.
+            </div>
+
+            <!-- Tombol -->
+            <div class="modal-ft">
+                <button class="mbtn secondary" onclick="closeModal('modal-pesan-habis')">
+                    <i class="fas fa-times"></i> Tidak
+                </button>
+                <button class="mbtn" onclick="goToPesanan()"
+                    style="background:linear-gradient(135deg,#f97316,#ef4444);color:#fff;border:none;">
+                    <i class="fas fa-box"></i> Ya, Buat Pesanan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         MODAL: STOK KURANG → Tawarkan Pesanan
+         (muncul saat qty di cart melebihi stok)
+    ════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-pesan-kurang">
+        <div class="modal-box">
+            <!-- Icon -->
+            <div class="modal-icon-circ orange" style="width:68px;height:68px;font-size:26px;margin-bottom:10px;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+
+            <!-- Judul -->
+            <div class="modal-ttl" style="font-size:17px;">Stok Tidak Mencukupi</div>
+
+            <!-- Nama obat ditampilkan dinamis -->
+            <div class="pesan-obat-name" id="pk-nama">—</div>
+
+            <!-- Info box -->
+            <div class="pesan-info-box">
+                <i class="fas fa-warehouse" style="margin-right:5px;color:#f97316"></i>
+                Stok tersedia: <strong id="pk-stok">0</strong> unit, sedangkan yang dibutuhkan melebihi jumlah tersebut.<br><br>
+                Apakah Anda ingin melakukan <strong>pesanan</strong> ? <br>
+                akan tetapi kedatangan barang kurang lebih 1 minggu setelah pesanan dibuat.
+            </div>
+
+            <!-- Tombol -->
+            <div class="modal-ft">
+                <button class="mbtn secondary" onclick="closeModal('modal-pesan-kurang')">
+                    <i class="fas fa-times"></i> Tidak
+                </button>
+                <button class="mbtn" onclick="goToPesanan()"
+                    style="background:linear-gradient(135deg,#f97316,#ef4444);color:#fff;border:none;">
+                    <i class="fas fa-box"></i> Ya, Buat Pesanan
+                </button>
+            </div>
         </div>
     </div>
 
@@ -676,90 +826,77 @@ $historyResult = mysqli_query(
             searchQ = '';
         let activeMember = null;
 
-        // ── Data rekening bank (sesuaikan dengan rekening apotek) ──
+        // ── Data rekening bank ──
         const bankRekening = {
-            'BCA': {
-                label: 'Bank BCA',
-                norek: '0921-0000000',
-                an: 'Apotek Healplus'
-            },
-            'BRI': {
-                label: 'Bank BRI',
-                norek: '1234-5678901',
-                an: 'Apotek Healplus'
-            },
-            'Mandiri': {
-                label: 'Bank Mandiri',
-                norek: '9876-5432100',
-                an: 'Apotek Healplus'
-            },
-            'BNI': {
-                label: 'Bank BNI',
-                norek: '1111-2222333',
-                an: 'Apotek Healplus'
-            },
+            'BCA':    { label: 'Bank BCA',    norek: '0921-0000000', an: 'Apotek Healplus' },
+            'BRI':    { label: 'Bank BRI',    norek: '1234-5678901', an: 'Apotek Healplus' },
+            'Mandiri':{ label: 'Bank Mandiri',norek: '9876-5432100', an: 'Apotek Healplus' },
+            'BNI':    { label: 'Bank BNI',    norek: '1111-2222333', an: 'Apotek Healplus' },
         };
 
-        // ── Data akun E-Wallet (sesuaikan dengan akun apotek) ──
+        // ── Data akun E-Wallet ──
         const ewalletData = {
-            'Dana': {
-                label: 'Dana',
-                norek: '+62-890-0000-0000',
-                an: 'Apotek Healplus'
-            },
-            'OVO': {
-                label: 'OVO',
-                norek: '+62-890-0000-0000',
-                an: 'Apotek Healplus'
-            },
-            'GoPay': {
-                label: 'GoPay',
-                norek: '+62-890-0000-0000',
-                an: 'Apotek Healplus'
-            },
-            'ShopeePay': {
-                label: 'ShopeePay',
-                norek: '+62-890-0000-0000',
-                an: 'Apotek Healplus'
-            },
-            'LinkAja': {
-                label: 'LinkAja',
-                norek: '+62-890-0000-0000',
-                an: 'Apotek Healplus'
-            },
+            'Dana':      { label: 'Dana',      norek: '+62-890-0000-0000', an: 'Apotek Healplus' },
+            'OVO':       { label: 'OVO',       norek: '+62-890-0000-0000', an: 'Apotek Healplus' },
+            'GoPay':     { label: 'GoPay',     norek: '+62-890-0000-0000', an: 'Apotek Healplus' },
+            'ShopeePay': { label: 'ShopeePay', norek: '+62-890-0000-0000', an: 'Apotek Healplus' },
+            'LinkAja':   { label: 'LinkAja',   norek: '+62-890-0000-0000', an: 'Apotek Healplus' },
         };
 
-        // ── Diskon 1-5% berdasarkan subtotal ──
+        // ── Diskon 1-10% berdasarkan subtotal ──
         function getDiscRate(sub) {
             if (sub >= 1000000) return 10;
-            if (sub >= 900000) return 9;
-            if (sub >= 800000) return 8;
-            if (sub >= 700000) return 7;
-            if (sub >= 600000) return 6;
-            if (sub >= 500000) return 5;
-            if (sub >= 200000) return 4;
-            if (sub >= 100000) return 3;
-            if (sub >= 50000) return 2;
+            if (sub >= 900000)  return 9;
+            if (sub >= 800000)  return 8;
+            if (sub >= 700000)  return 7;
+            if (sub >= 600000)  return 6;
+            if (sub >= 500000)  return 5;
+            if (sub >= 200000)  return 4;
+            if (sub >= 100000)  return 3;
+            if (sub >= 50000)   return 2;
             return 1;
+        }
+
+        // ════════════════════════════════════════
+        //  PESANAN helpers
+        // ════════════════════════════════════════
+
+        /**
+         * Tampilkan modal stok HABIS (stok = 0), lalu bisa redirect ke pesanan.php
+         */
+        function showPesananHabis(namaObat) {
+            document.getElementById('ph-nama').textContent  = namaObat;
+            document.getElementById('ph-nama2').textContent = namaObat;
+            openModal('modal-pesan-habis');
+        }
+
+        /**
+         * Tampilkan modal stok KURANG (qty > stok), lalu bisa redirect ke pesanan.php
+         */
+        function showPesananKurang(namaObat, stokTersedia) {
+            document.getElementById('pk-nama').textContent  = namaObat;
+            document.getElementById('pk-nama2').textContent = namaObat;
+            document.getElementById('pk-stok').textContent  = stokTersedia;
+            openModal('modal-pesan-kurang');
+        }
+
+        /**
+         * Redirect ke pesanan.php (dipanggil dari kedua modal pesanan)
+         */
+        function goToPesanan() {
+            window.location.href = 'pesanan.php';
         }
 
         // ── MEMBER ──
         function selectMember(id) {
             if (ownerMode) return;
-            if (!id) {
-                clearMember();
-                return;
-            }
+            if (!id) { clearMember(); return; }
             const opt = document.querySelector(`#member-sel option[value="${id}"]`);
             if (!opt) return;
-            activeMember = {
-                id,
-                nama: opt.dataset.nama,
-                hp: opt.dataset.hp
-            };
-            document.getElementById('m-av').textContent = activeMember.nama.charAt(0).toUpperCase();
+            activeMember = { id, nama: opt.dataset.nama, hp: opt.dataset.hp };
+            document.getElementById('m-av').textContent   = activeMember.nama.charAt(0).toUpperCase();
             document.getElementById('m-name').textContent = activeMember.nama;
-            document.getElementById('m-hp').textContent = activeMember.hp;
+            document.getElementById('m-hp').textContent   = activeMember.hp;
             document.getElementById('member-picker').classList.add('hidden');
             document.getElementById('member-active').classList.remove('hidden');
             updateTotals();
@@ -778,13 +915,10 @@ $historyResult = mysqli_query(
 
         function submitRegMember() {
             if (ownerMode) return;
-            const nama = document.getElementById('nm-nama').value.trim();
-            const hp = document.getElementById('nm-hp').value.trim();
+            const nama   = document.getElementById('nm-nama').value.trim();
+            const hp     = document.getElementById('nm-hp').value.trim();
             const alamat = document.getElementById('nm-alamat').value.trim();
-            if (!nama || !hp) {
-                showToast('Nama dan No. HP wajib diisi!', true);
-                return;
-            }
+            if (!nama || !hp) { showToast('Nama dan No. HP wajib diisi!', true); return; }
 
             const fd = new FormData();
             fd.append('ajax_tambah_member', '1');
@@ -792,10 +926,7 @@ $historyResult = mysqli_query(
             fd.append('no_hp', hp);
             fd.append('alamat', alamat);
 
-            fetch(window.location.href, {
-                    method: 'POST',
-                    body: fd
-                })
+            fetch(window.location.href, { method: 'POST', body: fd })
                 .then(r => r.json()).then(d => {
                     if (d.success) {
                         closeModal('modal-reg-member');
@@ -804,12 +935,12 @@ $historyResult = mysqli_query(
                         const opt = document.createElement('option');
                         opt.value = d.id;
                         opt.dataset.nama = d.nama;
-                        opt.dataset.hp = d.no_hp;
-                        opt.textContent = `${d.nama} — ${d.no_hp}`;
+                        opt.dataset.hp   = d.no_hp;
+                        opt.textContent  = `${d.nama} — ${d.no_hp}`;
                         sel.appendChild(opt);
                         sel.value = d.id;
                         selectMember(d.id);
-                        ['nm-nama', 'nm-hp', 'nm-alamat'].forEach(i => document.getElementById(i).value = '');
+                        ['nm-nama','nm-hp','nm-alamat'].forEach(i => document.getElementById(i).value = '');
                     } else showToast(d.message, true);
                 }).catch(() => showToast('Koneksi gagal.', true));
         }
@@ -822,18 +953,46 @@ $historyResult = mysqli_query(
                 const ms = p.nama_obat.toLowerCase().includes(searchQ.toLowerCase());
                 return mc && ms;
             });
+
             if (!list.length) {
-                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)"><i class="fas fa-search" style="font-size:32px;color:#d0ddd0"></i><p style="margin-top:10px">Obat tidak ditemukan</p></div>`;
+                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">
+                    <i class="fas fa-search" style="font-size:32px;color:#d0ddd0"></i>
+                    <p style="margin-top:10px">Obat tidak ditemukan</p></div>`;
                 return;
             }
+
             grid.innerHTML = list.map((p, i) => {
-                const st = iconStyles[i % iconStyles.length];
-                const em = iconEmojis[i % iconEmojis.length];
-                const badge = cart[p.id_obat] ? `<div style="position:absolute;top:8px;right:8px;background:var(--green);color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700">${cart[p.id_obat].qty}</div>` : '';
-                const thumb = p.gambar ?
-                    `<img src="${UPLOAD_URL}${p.gambar}" alt="${p.nama_obat}" class="product-img">` :
-                    `<div class="product-icon ${st}">${em}</div>`;
+                const st   = iconStyles[i % iconStyles.length];
+                const em   = iconEmojis[i % iconEmojis.length];
+                const stok = parseInt(p.stok);
+
+                // ── Stok HABIS (= 0) ──
+                if (stok === 0) {
+                    const thumb = p.gambar
+                        ? `<img src="${UPLOAD_URL}${p.gambar}" alt="${p.nama_obat}" class="product-img" style="filter:grayscale(60%)">`
+                        : `<div class="product-icon ${st}" style="opacity:.55">${em}</div>`;
+
+                    return `<div class="product-card out-of-stock">
+                        <span class="badge-habis"><i class="fas fa-ban" style="font-size:9px;margin-right:3px"></i>Habis</span>
+                        ${thumb}
+                        <div class="product-name">${p.nama_obat}</div>
+                        <div class="product-price">Rp ${fmt(p.harga_jual)}</div>
+                        <div class="product-stock" style="color:var(--red);font-weight:700">Stok: 0</div>
+                        <button class="btn-pesan-card" onclick="showPesananHabis('${p.nama_obat.replace(/'/g,"\\'")}')">
+                            <i class="fas fa-box"></i> Pesan
+                        </button>
+                    </div>`;
+                }
+
+                // ── Stok TERSEDIA ──
+                const badge = cart[p.id_obat]
+                    ? `<div style="position:absolute;top:8px;right:8px;background:var(--green);color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700">${cart[p.id_obat].qty}</div>`
+                    : '';
+                const thumb = p.gambar
+                    ? `<img src="${UPLOAD_URL}${p.gambar}" alt="${p.nama_obat}" class="product-img">`
+                    : `<div class="product-icon ${st}">${em}</div>`;
                 const clickAttr = ownerMode ? '' : `onclick="addCart(${p.id_obat})"`;
+
                 return `<div class="product-card" ${clickAttr}>${badge}
                     ${thumb}
                     <div class="product-name">${p.nama_obat}</div>
@@ -843,10 +1002,7 @@ $historyResult = mysqli_query(
             }).join('');
         }
 
-        function filterProducts(v) {
-            searchQ = v;
-            renderProducts();
-        }
+        function filterProducts(v) { searchQ = v; renderProducts(); }
 
         function filterCat(btn, cat) {
             document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
@@ -860,16 +1016,23 @@ $historyResult = mysqli_query(
             if (ownerMode) return;
             const p = products.find(x => x.id_obat == id);
             if (!p) return;
-            if (!cart[id]) cart[id] = {
-                id_obat: id,
-                nama: p.nama_obat,
-                harga: parseFloat(p.harga_jual),
-                qty: 0
-            };
-            if (cart[id].qty >= parseInt(p.stok)) {
-                showToast('Stok tidak cukup!', true);
+
+            const stok = parseInt(p.stok);
+
+            // Stok sudah habis sebelum ditambah
+            if (stok === 0) {
+                showPesananHabis(p.nama_obat);
                 return;
             }
+
+            if (!cart[id]) cart[id] = { id_obat: id, nama: p.nama_obat, harga: parseFloat(p.harga_jual), qty: 0 };
+
+            // Qty akan melebihi stok → tampilkan modal pesanan kurang
+            if (cart[id].qty >= stok) {
+                showPesananKurang(p.nama_obat, stok);
+                return;
+            }
+
             cart[id].qty++;
             renderCart();
             renderProducts();
@@ -879,6 +1042,16 @@ $historyResult = mysqli_query(
         function changeQty(id, d) {
             if (ownerMode) return;
             if (!cart[id]) return;
+
+            const p    = products.find(x => x.id_obat == id);
+            const stok = p ? parseInt(p.stok) : 0;
+
+            // Tambah qty melebihi stok → modal pesanan kurang
+            if (d > 0 && cart[id].qty >= stok) {
+                showPesananKurang(cart[id].nama, stok);
+                return;
+            }
+
             cart[id].qty += d;
             if (cart[id].qty <= 0) delete cart[id];
             renderCart();
@@ -887,16 +1060,18 @@ $historyResult = mysqli_query(
         }
 
         function renderCart() {
-            const c = document.getElementById('cart-items');
+            const c    = document.getElementById('cart-items');
             const keys = Object.keys(cart);
             if (!keys.length) {
-                c.innerHTML = `<div class="empty-cart"><i class="fas fa-cart-plus"></i><p>Keranjang kosong</p><p style="font-size:11px;color:#c0cfc0">Pilih produk di kiri</p></div>`;
+                c.innerHTML = `<div class="empty-cart"><i class="fas fa-cart-plus"></i>
+                    <p>Keranjang kosong</p>
+                    <p style="font-size:11px;color:#c0cfc0">Pilih produk di kiri</p></div>`;
                 updateTotals();
                 return;
             }
             c.innerHTML = keys.map(id => {
                 const item = cart[id];
-                const sub = item.qty * item.harga;
+                const sub  = item.qty * item.harga;
                 return `<div class="cart-item">
                     <div class="cart-item-info">
                         <div class="cart-item-name">${item.nama}</div>
@@ -905,7 +1080,7 @@ $historyResult = mysqli_query(
                     <div class="qty-ctrl">
                         <button class="qty-btn rm" onclick="changeQty(${id},-1)"><i class="fas fa-minus" style="font-size:10px"></i></button>
                         <span class="qty-num">${item.qty}</span>
-                        <button class="qty-btn" onclick="changeQty(${id},1)"><i class="fas fa-plus" style="font-size:10px"></i></button>
+                        <button class="qty-btn"    onclick="changeQty(${id},1)"><i class="fas fa-plus"  style="font-size:10px"></i></button>
                     </div>
                     <div class="cart-item-subtotal">Rp ${fmt(sub)}</div>
                 </div>`;
@@ -927,13 +1102,13 @@ $historyResult = mysqli_query(
             const sub = getSubtotal();
             document.getElementById('s-subtotal').textContent = 'Rp ' + fmt(sub);
             if (activeMember && sub > 0) {
-                const r = getDiscRate(sub);
+                const r    = getDiscRate(sub);
                 const disc = Math.round(sub * r / 100);
                 document.getElementById('disc-row').classList.remove('hidden');
                 document.getElementById('disc-lbl').textContent = `Diskon Member (${r}%)`;
                 document.getElementById('disc-val').textContent = `- Rp ${fmt(disc)}`;
-                document.getElementById('m-disc').textContent = `Diskon ${r}%`;
-                document.getElementById('s-total').textContent = 'Rp ' + fmt(sub - disc);
+                document.getElementById('m-disc').textContent   = `Diskon ${r}%`;
+                document.getElementById('s-total').textContent  = 'Rp ' + fmt(sub - disc);
             } else {
                 document.getElementById('disc-row').classList.add('hidden');
                 document.getElementById('s-total').textContent = 'Rp ' + fmt(sub);
@@ -945,11 +1120,11 @@ $historyResult = mysqli_query(
         function calcKemb() {
             const total = getTotal();
             const bayar = parseFloat(document.getElementById('cash-in').value) || 0;
-            const row = document.getElementById('kemb-row');
+            const row   = document.getElementById('kemb-row');
             if (bayar > 0 && total > 0) {
                 row.classList.remove('hidden');
                 const kemb = bayar - total;
-                document.getElementById('kemb-val').textContent = 'Rp ' + fmt(kemb);
+                document.getElementById('kemb-val').textContent  = 'Rp ' + fmt(kemb);
                 document.getElementById('kemb-val').style.color = kemb >= 0 ? 'var(--green)' : 'var(--red)';
             } else row.classList.add('hidden');
             updatePayBtn();
@@ -957,103 +1132,80 @@ $historyResult = mysqli_query(
 
         // ── Toggle tampilan field sesuai metode ──
         function togglePayFields(v) {
-            document.getElementById('cash-sec').style.display = v === 'cash' ? 'flex' : 'none';
-            document.getElementById('bank-sec').style.display = v === 'transfer' ? 'flex' : 'none';
-            document.getElementById('ewallet-sec').style.display = v === 'ewallet' ? 'flex' : 'none';
-            // Reset pilihan saat ganti metode
-            if (v !== 'transfer') document.getElementById('bank-sel').value = '';
-            if (v !== 'ewallet') document.getElementById('ewallet-sel').value = '';
+            document.getElementById('cash-sec').style.display   = v === 'cash'     ? 'flex' : 'none';
+            document.getElementById('bank-sec').style.display   = v === 'transfer' ? 'flex' : 'none';
+            document.getElementById('ewallet-sec').style.display= v === 'ewallet'  ? 'flex' : 'none';
+            if (v !== 'transfer') document.getElementById('bank-sel').value   = '';
+            if (v !== 'ewallet')  document.getElementById('ewallet-sel').value= '';
             updatePayBtn();
         }
 
         function updatePayBtn() {
-            const total = getTotal();
+            const total  = getTotal();
             const method = document.getElementById('pay-method').value;
             let ok = total > 0;
-            if (method === 'cash') {
-                ok = ok && (parseFloat(document.getElementById('cash-in').value) || 0) >= total;
-            } else if (method === 'transfer') {
-                ok = ok && document.getElementById('bank-sel').value !== '';
-            } else if (method === 'ewallet') {
-                ok = ok && document.getElementById('ewallet-sel').value !== '';
-            }
+            if (method === 'cash')     ok = ok && (parseFloat(document.getElementById('cash-in').value) || 0) >= total;
+            else if (method === 'transfer') ok = ok && document.getElementById('bank-sel').value !== '';
+            else if (method === 'ewallet')  ok = ok && document.getElementById('ewallet-sel').value !== '';
             document.getElementById('btn-pay').disabled = !ok;
         }
 
         // ── KONFIRMASI TRANSAKSI ──
         function confirmTrx() {
             if (ownerMode) return;
-            const total = getTotal();
-            const sub = getSubtotal();
+            const total  = getTotal();
+            const sub    = getSubtotal();
             const method = document.getElementById('pay-method').value;
 
-            // ── Transfer Bank → buka modal khusus ──
             if (method === 'transfer') {
                 const bankKey = document.getElementById('bank-sel').value;
-                const bank = bankRekening[bankKey];
-                if (!bank) {
-                    showToast('Pilih bank terlebih dahulu!', true);
-                    return;
-                }
-
-                document.getElementById('mt-bank').textContent = bank.label;
+                const bank    = bankRekening[bankKey];
+                if (!bank) { showToast('Pilih bank terlebih dahulu!', true); return; }
+                document.getElementById('mt-bank').textContent  = bank.label;
                 document.getElementById('mt-norek').textContent = bank.norek;
-                document.getElementById('mt-an').textContent = bank.an;
-                document.getElementById('mt-total').textContent =
-                    total > 0 ? 'Rp ' + fmt(total) : 'Rp -';
-
+                document.getElementById('mt-an').textContent    = bank.an;
+                document.getElementById('mt-total').textContent = total > 0 ? 'Rp ' + fmt(total) : 'Rp -';
                 openModal('modal-transfer');
                 return;
             }
 
-            // ── E-Wallet → buka modal khusus ──
             if (method === 'ewallet') {
                 const ewKey = document.getElementById('ewallet-sel').value;
-                const ew = ewalletData[ewKey];
-                if (!ew) {
-                    showToast('Pilih payment terlebih dahulu!', true);
-                    return;
-                }
-
+                const ew    = ewalletData[ewKey];
+                if (!ew) { showToast('Pilih payment terlebih dahulu!', true); return; }
                 document.getElementById('ew-payment').textContent = ew.label;
-                document.getElementById('ew-norek').textContent = ew.norek;
-                document.getElementById('ew-an').textContent = ew.an;
-                document.getElementById('ew-total').textContent =
-                    total > 0 ? 'Rp ' + fmt(total) : 'Rp -';
-
+                document.getElementById('ew-norek').textContent   = ew.norek;
+                document.getElementById('ew-an').textContent      = ew.an;
+                document.getElementById('ew-total').textContent   = total > 0 ? 'Rp ' + fmt(total) : 'Rp -';
                 openModal('modal-ewallet');
                 return;
             }
 
-            // ── Tunai → modal konfirmasi biasa ──
             const bayar = parseFloat(document.getElementById('cash-in').value);
-            let body = `Total: <strong>Rp ${fmt(total)}</strong><br>`;
+            let body    = `Total: <strong>Rp ${fmt(total)}</strong><br>`;
             if (activeMember) {
                 const r = getDiscRate(sub);
-                body += `Member: <strong>${activeMember.nama}</strong> · Diskon ${r}%<br>`;
+                body   += `Member: <strong>${activeMember.nama}</strong> · Diskon ${r}%<br>`;
             }
             body += `Bayar: <strong>Rp ${fmt(bayar)}</strong><br>Kembalian: <strong>Rp ${fmt(bayar - total)}</strong>`;
             document.getElementById('confirm-body').innerHTML = body;
             openModal('modal-confirm');
         }
 
-        // ── PROSES TRANSAKSI (dipanggil dari ketiga modal konfirmasi) ──
+        // ── PROSES TRANSAKSI ──
         function processTrx() {
             closeModal('modal-confirm');
             closeModal('modal-transfer');
             closeModal('modal-ewallet');
 
-            const total = getTotal();
+            const total  = getTotal();
             const method = document.getElementById('pay-method').value;
-            const bayar = method === 'cash' ?
-                parseFloat(document.getElementById('cash-in').value) :
-                total;
+            const bayar  = method === 'cash'
+                ? parseFloat(document.getElementById('cash-in').value)
+                : total;
 
             const items = Object.values(cart).map(i => ({
-                id_obat: i.id_obat,
-                nama: i.nama,
-                harga: i.harga,
-                jumlah: i.qty
+                id_obat: i.id_obat, nama: i.nama, harga: i.harga, jumlah: i.qty
             }));
 
             const fd = new FormData();
@@ -1064,10 +1216,7 @@ $historyResult = mysqli_query(
             fd.append('metode', method);
             if (activeMember) fd.append('id_member', activeMember.id);
 
-            fetch(window.location.href, {
-                    method: 'POST',
-                    body: fd
-                })
+            fetch(window.location.href, { method: 'POST', body: fd })
                 .then(r => r.json()).then(data => {
                     if (data.success) {
                         lastTrxData = {
@@ -1075,14 +1224,14 @@ $historyResult = mysqli_query(
                             tanggal: data.tanggal,
                             items,
                             subtotal: getSubtotal(),
-                            total: data.total,
-                            bayar: data.bayar,
-                            kembalian: data.kembalian,
-                            metode: document.getElementById('pay-method').selectedOptions[0].text,
-                            member: activeMember ? activeMember.nama : null,
-                            diskon: activeMember ? Math.round(getSubtotal() * getDiscRate(getSubtotal()) / 100) : 0,
+                            total:    data.total,
+                            bayar:    data.bayar,
+                            kembalian:data.kembalian,
+                            metode:   document.getElementById('pay-method').selectedOptions[0].text,
+                            member:   activeMember ? activeMember.nama : null,
+                            diskon:   activeMember ? Math.round(getSubtotal() * getDiscRate(getSubtotal()) / 100) : 0,
                             discRate: activeMember ? getDiscRate(getSubtotal()) : 0,
-                            kasir: '<?= htmlspecialchars($user["nama_user"]) ?>'
+                            kasir:    '<?= htmlspecialchars($user["nama_user"]) ?>'
                         };
                         renderStruk(lastTrxData);
                         openModal('modal-success');
@@ -1104,33 +1253,26 @@ $historyResult = mysqli_query(
         function switchTab(tab, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('tab-pos').style.display = tab === 'pos' ? 'flex' : 'none';
+            document.getElementById('tab-pos').style.display     = tab === 'pos'     ? 'flex' : 'none';
             document.getElementById('tab-history').style.display = tab === 'history' ? 'flex' : 'none';
         }
 
         // ── MODAL helpers ──
-        function openModal(id) {
-            document.getElementById(id).classList.add('show');
-        }
+        function openModal(id)  { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('show');
-        }
-
-        // Tutup modal transfer saat klik overlay
-        document.getElementById('modal-transfer').addEventListener('click', function(e) {
-            if (e.target === this) closeModal('modal-transfer');
-        });
-        // Tutup modal e-wallet saat klik overlay
-        document.getElementById('modal-ewallet').addEventListener('click', function(e) {
-            if (e.target === this) closeModal('modal-ewallet');
+        // Tutup modal saat klik overlay
+        ['modal-transfer','modal-ewallet','modal-pesan-habis','modal-pesan-kurang'].forEach(id => {
+            document.getElementById(id).addEventListener('click', function(e) {
+                if (e.target === this) closeModal(id);
+            });
         });
 
         // ── TOAST ──
         function showToast(msg, error = false) {
             const t = document.getElementById('toast');
-            t.innerHTML = `<i class="fas fa-${error ? 'exclamation-circle' : 'check-circle'}"></i> ${msg}`;
-            t.className = 'toast show' + (error ? ' error' : '');
+            t.innerHTML  = `<i class="fas fa-${error ? 'exclamation-circle' : 'check-circle'}"></i> ${msg}`;
+            t.className  = 'toast show' + (error ? ' error' : '');
             setTimeout(() => t.className = 'toast', 2800);
         }
 
@@ -1145,24 +1287,15 @@ $historyResult = mysqli_query(
         });
 
         // ── UTILS ──
-        function fmt(n) {
-            return Number(n).toLocaleString('id-ID');
-        }
+        function fmt(n) { return Number(n).toLocaleString('id-ID'); }
 
         // ── STRUK ──
         let lastTrxData = null;
 
         function renderStruk(d) {
-            const tgl = new Date(d.tanggal);
-            const tglStr = tgl.toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
-            const jamStr = tgl.toLocaleTimeString('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            const tgl    = new Date(d.tanggal);
+            const tglStr = tgl.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
+            const jamStr = tgl.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
 
             const itemRows = d.items.map(it => `
                 <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0">
@@ -1226,17 +1359,10 @@ $historyResult = mysqli_query(
 
         function printStruk() {
             if (!lastTrxData) return;
-            const d = lastTrxData;
-            const tgl = new Date(d.tanggal);
-            const tglStr = tgl.toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
-            const jamStr = tgl.toLocaleTimeString('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            const d      = lastTrxData;
+            const tgl    = new Date(d.tanggal);
+            const tglStr = tgl.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
+            const jamStr = tgl.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
 
             const itemRows = d.items.map(it => `
                 <tr>
@@ -1246,9 +1372,15 @@ $historyResult = mysqli_query(
                     <td style="text-align:right;padding:4px 0;font-weight:700">Rp ${fmt(it.jumlah * it.harga)}</td>
                 </tr>`).join('');
 
-            const diskonRow = d.diskon > 0 ? `<tr><td colspan="3" style="padding:3px 0;color:#666">Diskon Member (${d.discRate}%)</td><td style="text-align:right;padding:3px 0;color:#666">- Rp ${fmt(d.diskon)}</td></tr>` : '';
-            const kembalianRow = d.kembalian > 0 ? `<tr><td colspan="3" style="padding:3px 0">Kembalian</td><td style="text-align:right;padding:3px 0;font-weight:700">Rp ${fmt(d.kembalian)}</td></tr>` : '';
-            const memberRow = d.member ? `<p style="margin:2px 0">Member: <strong>${d.member}</strong>${d.discRate > 0 ? ` (Diskon ${d.discRate}%)` : ''}</p>` : '';
+            const diskonRow    = d.diskon > 0
+                ? `<tr><td colspan="3" style="padding:3px 0;color:#666">Diskon Member (${d.discRate}%)</td><td style="text-align:right;padding:3px 0;color:#666">- Rp ${fmt(d.diskon)}</td></tr>`
+                : '';
+            const kembalianRow = d.kembalian > 0
+                ? `<tr><td colspan="3" style="padding:3px 0">Kembalian</td><td style="text-align:right;padding:3px 0;font-weight:700">Rp ${fmt(d.kembalian)}</td></tr>`
+                : '';
+            const memberRow    = d.member
+                ? `<p style="margin:2px 0">Member: <strong>${d.member}</strong>${d.discRate > 0 ? ` (Diskon ${d.discRate}%)` : ''}</p>`
+                : '';
 
             const html = `<!DOCTYPE html><html><head>
 <meta charset="UTF-8"><title>Struk #TRX-${String(d.id).padStart(4,'0')}</title>

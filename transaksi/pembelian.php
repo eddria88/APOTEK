@@ -17,22 +17,20 @@ $queryUser = mysqli_query($conn, "SELECT * FROM users WHERE username='$username'
 $user = mysqli_fetch_assoc($queryUser);
 $isOwner = $user['role'] === 'owner';
 
+// ── AJAX: Generate Preview Batch ──
 if (isset($_GET['get_batch'])) {
     header('Content-Type: application/json');
-    $id_obat = $_GET['id_obat'];
-    $q = mysqli_query($conn, "SELECT MAX(CAST(batch AS UNSIGNED)) as last_batch FROM pembelian WHERE id_obat='$id_obat'
-    ");
+    $id_obat = (int) $_GET['id_obat'];
+    $tanggal = isset($_GET['tanggal']) ? $_GET['tanggal'] : date('Y-m-d');
+    $tgl_fmt = str_replace('-', '', $tanggal); // "2025-05-19" → "20250519"
 
-    $data = mysqli_fetch_assoc($q);
+    $q   = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM pembelian 
+                                 WHERE id_obat='$id_obat' 
+                                 AND DATE_FORMAT(tanggal,'%Y%m%d') = '$tgl_fmt'");
+    $cnt  = mysqli_fetch_assoc($q)['cnt'];
+    $next = str_pad($cnt + 1, 3, '0', STR_PAD_LEFT);
 
-    $next = $data['last_batch'] + 1;
-
-    $batch = str_pad($next, 3, '0', STR_PAD_LEFT);
-
-    echo json_encode([
-        "batch" => $batch
-    ]);
-
+    echo json_encode(['batch' => $tgl_fmt . '-' . $next]);
     exit;
 }
 
@@ -46,7 +44,7 @@ if (isset($_POST['ajax_simpan'])) {
 
     $tanggal      = $_POST['tanggal'];
     $id_supplier  = $_POST['id_supplier'];
-    $id_obat      = $_POST['id_obat'];
+    $id_obat      = (int) $_POST['id_obat'];
     $jumlah       = (int)   $_POST['jumlah'];
     $harga_beli   = (float) $_POST['harga_beli'];
     $expired_date = $_POST['expired_date'];
@@ -62,13 +60,13 @@ if (isset($_POST['ajax_simpan'])) {
         exit;
     }
 
-    // AUTO BATCH
-    $q = mysqli_query($conn, "SELECT MAX(CAST(batch AS UNSIGNED)) as last_batch FROM pembelian WHERE id_obat='$id_obat'
-    ");
-
-    $data = mysqli_fetch_assoc($q);
-    $next_batch = $data['last_batch'] + 1;
-    $batch = str_pad($next_batch, 3, '0', STR_PAD_LEFT);
+    // ── AUTO BATCH: format YYYYMMDD-NNN per obat per tanggal ──
+    $tgl_fmt   = str_replace('-', '', $tanggal); // "2025-05-19" → "20250519"
+    $q_batch   = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM pembelian 
+                                       WHERE id_obat='$id_obat' 
+                                       AND DATE_FORMAT(tanggal,'%Y%m%d') = '$tgl_fmt'");
+    $cnt_batch = mysqli_fetch_assoc($q_batch)['cnt'];
+    $batch     = $tgl_fmt . '-' . str_pad($cnt_batch + 1, 3, '0', STR_PAD_LEFT);
 
     $total = $jumlah * $harga_beli;
     $sisa  = $total - $dibayar;
@@ -88,7 +86,7 @@ if (isset($_POST['ajax_simpan'])) {
 
     if ($ok) {
         mysqli_query($conn, "UPDATE obat SET stok = stok + $jumlah WHERE id_obat='$id_obat'");
-        echo json_encode(['success' => true, 'message' => 'Pembelian berhasil disimpan!']);
+        echo json_encode(['success' => true, 'message' => 'Pembelian berhasil disimpan!', 'batch' => $batch]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Gagal menyimpan: ' . mysqli_error($conn)]);
     }
@@ -255,7 +253,11 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Tanggal Pembelian</label>
-                                <input type="date" id="f-tanggal" class="form-input" value="<?= date('Y-m-d') ?>" <?= $isOwner ? 'disabled' : '' ?>>
+                                <!-- onchange="generateBatch()" agar batch refresh saat tanggal diubah -->
+                                <input type="date" id="f-tanggal" class="form-input"
+                                    value="<?= date('Y-m-d') ?>"
+                                    onchange="generateBatch()"
+                                    <?= $isOwner ? 'disabled' : '' ?>>
                             </div>
                             <div class="form-group">
                                 <label>Supplier</label>
@@ -270,6 +272,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
                         <div class="form-group">
                             <label>Obat</label>
+                            <!-- onchange="generateBatch()" generate batch saat obat dipilih -->
                             <select id="f-obat" class="form-select" onchange="generateBatch()" <?= $isOwner ? 'disabled' : '' ?>>
                                 <option value="">-- Pilih Obat --</option>
                                 <?php while ($o = mysqli_fetch_assoc($obatResult)): ?>
@@ -280,8 +283,17 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Batch / No. Lot</label>
-                                <input type="text" id="f-batch" class="form-input" readonly>
+                                <label>
+                                    Batch / No. Lot
+                                    <span id="batch-loading" style="display:none;font-size:11px;color:var(--muted);font-weight:400;margin-left:6px">
+                                        <i class="fas fa-spinner fa-spin"></i> Generating...
+                                    </span>
+                                </label>
+                                <!-- readonly: di-generate otomatis dari tanggal + urutan per obat -->
+                                <input type="text" id="f-batch" class="form-input"
+                                    placeholder="Batch Otomatis"
+                                    readonly
+                                    style="background:var(--bg);color:var(--text);font-weight:600;letter-spacing:0.5px;">
                             </div>
                             <div class="form-group">
                                 <label>Expired Date</label>
@@ -434,7 +446,11 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                                         <td><?= $row['tanggal'] ?></td>
                                         <td><?= htmlspecialchars($row['nama_supplier'] ?? '-') ?></td>
                                         <td style="font-weight:600"><?= htmlspecialchars($row['nama_obat'] ?? '-') ?></td>
-                                        <td><span style="background:var(--bg);padding:2px 8px;border-radius:6px;font-size:12px"><?= htmlspecialchars($row['batch'] ?? '-') ?></span></td>
+                                        <td>
+                                            <span style="background:var(--bg);padding:2px 8px;border-radius:6px;font-size:12px;font-family:monospace;letter-spacing:0.3px">
+                                                <?= htmlspecialchars($row['batch'] ?? '-') ?>
+                                            </span>
+                                        </td>
                                         <td><?= $row['expired_date'] ?? '-' ?></td>
                                         <td><?= $row['jumlah'] ?> pcs</td>
                                         <td style="font-weight:700">Rp <?= number_format($row['total'], 0, ',', '.') ?></td>
@@ -444,7 +460,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
                                         </td>
                                         <td>
                                             <span class="badge-status badge-<?= strtolower($row['status_pembayaran']) ?> status-cell-<?= $row['id_pembelian'] ?>">
-                                                <?= $row['status_pembayaran'] === 'lunas' ? '✓ Lunas' : '⚠ Hutang' ?>
+                                                <?= $row['status_pembayaran'] === 'Lunas' ? '✓ Lunas' : '⚠ Hutang' ?>
                                             </span>
                                         </td>
                                     </tr>
@@ -526,8 +542,7 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         function switchTab(tab, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            document.getElementById('tab-beli').style.display = tab === 'beli' ? 'flex' : 'none';
+            document.getElementById('tab-beli').style.display    = tab === 'beli'    ? 'flex'  : 'none';
             document.getElementById('tab-history').style.display = tab === 'history' ? 'block' : 'none';
         }
 
@@ -538,17 +553,17 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
 
         function calcTotal() {
             const j = parseFloat(document.getElementById('f-jumlah').value) || 0;
-            const h = parseFloat(document.getElementById('f-harga').value) || 0;
+            const h = parseFloat(document.getElementById('f-harga').value)  || 0;
             document.getElementById('preview-total').textContent = formatRp(j * h);
             calcSisa();
         }
 
         function calcSisa() {
-            const j = parseFloat(document.getElementById('f-jumlah').value) || 0;
-            const h = parseFloat(document.getElementById('f-harga').value) || 0;
-            const d = parseFloat(document.getElementById('f-dibayar').value) || 0;
+            const j     = parseFloat(document.getElementById('f-jumlah').value)  || 0;
+            const h     = parseFloat(document.getElementById('f-harga').value)   || 0;
+            const d     = parseFloat(document.getElementById('f-dibayar').value) || 0;
             const total = j * h;
-            const sisa = total - d;
+            const sisa  = total - d;
             const previewEl = document.getElementById('sisa-preview');
             if (d > 0 && sisa > 0) {
                 previewEl.style.display = 'flex';
@@ -558,52 +573,81 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
             }
         }
 
+        // ── Generate Batch Otomatis ──
+        // Format: YYYYMMDD-NNN  (tanggal beli + nomor urut per obat per hari)
+        // Contoh: 20250519-001, 20250519-002, 20250520-001
+        function generateBatch() {
+            if (ownerMode) return;
+
+            const obat = document.getElementById('f-obat').value;
+            const tgl  = document.getElementById('f-tanggal').value; // "2025-05-19"
+
+            if (!obat || !tgl) {
+                document.getElementById('f-batch').value = '';
+                return;
+            }
+
+            // Tampilkan loading
+            document.getElementById('f-batch').value = '';
+            document.getElementById('batch-loading').style.display = 'inline';
+
+            fetch(`pembelian.php?get_batch=1&id_obat=${obat}&tanggal=${tgl}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('f-batch').value = data.batch;
+                    document.getElementById('batch-loading').style.display = 'none';
+                })
+                .catch(() => {
+                    document.getElementById('batch-loading').style.display = 'none';
+                    showToast('Gagal generate batch, coba lagi.', true);
+                });
+        }
+
         // ── Submit Pembelian ──
         function submitPembelian() {
             if (ownerMode) return;
-            const tanggal = document.getElementById('f-tanggal').value;
+
+            const tanggal     = document.getElementById('f-tanggal').value;
             const id_supplier = document.getElementById('f-supplier').value;
-            const id_obat = document.getElementById('f-obat').value;
-            const expired = document.getElementById('f-expired').value;
-            const batch = document.getElementById('f-batch').value;
-            const jumlah = document.getElementById('f-jumlah').value;
-            const harga = document.getElementById('f-harga').value;
-            const dibayar = document.getElementById('f-dibayar').value || 0;
+            const id_obat     = document.getElementById('f-obat').value;
+            const expired     = document.getElementById('f-expired').value;
+            const batch       = document.getElementById('f-batch').value;
+            const jumlah      = document.getElementById('f-jumlah').value;
+            const harga       = document.getElementById('f-harga').value;
+            const dibayar     = document.getElementById('f-dibayar').value || 0;
 
             if (!tanggal || !id_supplier || !id_obat || !expired || !jumlah || !harga) {
                 showToast('Harap isi semua field yang diperlukan!', true);
                 return;
             }
 
-            const fd = new FormData();
-            fd.append('ajax_simpan', '1');
-            fd.append('tanggal', tanggal);
-            fd.append('id_supplier', id_supplier);
-            fd.append('id_obat', id_obat);
-            fd.append('expired_date', expired);
-            fd.append('batch', batch);
-            fd.append('jumlah', jumlah);
-            fd.append('harga_beli', harga);
-            fd.append('dibayar', dibayar);
-
-            if (jumlah <= 0) {
+            if (parseFloat(jumlah) <= 0) {
                 showToast('Jumlah harus lebih dari 0!', true);
                 return;
             }
 
-            if (harga < 0) {
+            if (parseFloat(harga) < 0) {
                 showToast('Harga tidak boleh minus!', true);
                 return;
             }
 
-            fetch(window.location.href, {
-                    method: 'POST',
-                    body: fd
-                })
+            const fd = new FormData();
+            fd.append('ajax_simpan',   '1');
+            fd.append('tanggal',       tanggal);
+            fd.append('id_supplier',   id_supplier);
+            fd.append('id_obat',       id_obat);
+            fd.append('expired_date',  expired);
+            fd.append('batch',         batch);
+            fd.append('jumlah',        jumlah);
+            fd.append('harga_beli',    harga);
+            fd.append('dibayar',       dibayar);
+
+            fetch(window.location.href, { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        document.getElementById('modal-sukses-text').textContent = data.message;
+                        document.getElementById('modal-sukses-text').textContent =
+                            data.message + (data.batch ? ' (Batch: ' + data.batch + ')' : '');
                         openModal('modal-sukses');
                         setTimeout(() => {
                             closeModal('modal-sukses');
@@ -621,28 +665,28 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         }
 
         // ── Bayar Hutang ──
-        let activeBayarId = null;
+        let activeBayarId   = null;
         let activeBayarSisa = 0;
 
         function openBayarModal(id, nama, sisa) {
-            activeBayarId = id;
+            activeBayarId   = id;
             activeBayarSisa = sisa;
-            document.getElementById('modal-nama-obat').textContent = nama;
-            document.getElementById('modal-sisa-text').textContent = formatRp(sisa);
-            document.getElementById('input-bayar').value = '';
-            document.getElementById('modal-sisa-preview').style.display = 'none';
+            document.getElementById('modal-nama-obat').textContent        = nama;
+            document.getElementById('modal-sisa-text').textContent        = formatRp(sisa);
+            document.getElementById('input-bayar').value                  = '';
+            document.getElementById('modal-sisa-preview').style.display   = 'none';
             openModal('modal-bayar');
         }
 
         function previewBayar() {
-            const bayar = parseFloat(document.getElementById('input-bayar').value) || 0;
+            const bayar      = parseFloat(document.getElementById('input-bayar').value) || 0;
             const sisa_after = activeBayarSisa - bayar;
-            const el = document.getElementById('modal-sisa-preview');
+            const el         = document.getElementById('modal-sisa-preview');
             if (bayar > 0) {
                 el.style.display = 'flex';
-                const afterEl = document.getElementById('modal-sisa-after');
-                afterEl.textContent = sisa_after <= 0 ? '✓ Lunas' : formatRp(sisa_after);
-                afterEl.style.color = sisa_after <= 0 ? 'var(--green)' : 'var(--amber)';
+                const afterEl    = document.getElementById('modal-sisa-after');
+                afterEl.textContent  = sisa_after <= 0 ? '✓ Lunas' : formatRp(sisa_after);
+                afterEl.style.color  = sisa_after <= 0 ? 'var(--green)' : 'var(--amber)';
             } else {
                 el.style.display = 'none';
             }
@@ -656,24 +700,21 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
             }
 
             const fd = new FormData();
-            fd.append('ajax_bayar', '1');
-            fd.append('id_pembelian', activeBayarId);
-            fd.append('bayar_tambah', bayar);
+            fd.append('ajax_bayar',    '1');
+            fd.append('id_pembelian',  activeBayarId);
+            fd.append('bayar_tambah',  bayar);
 
-            fetch(window.location.href, {
-                    method: 'POST',
-                    body: fd
-                })
+            fetch(window.location.href, { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
                         closeModal('modal-bayar');
-                        const sisaCell = document.querySelector(`.sisa-cell-${activeBayarId}`);
+                        const sisaCell   = document.querySelector(`.sisa-cell-${activeBayarId}`);
                         const statusCell = document.querySelector(`.status-cell-${activeBayarId}`);
-                        if (sisaCell) sisaCell.textContent = formatRp(data.sisa_baru);
+                        if (sisaCell)   sisaCell.textContent = formatRp(data.sisa_baru);
                         if (statusCell) {
                             statusCell.textContent = data.status === 'Lunas' ? '✓ Lunas' : '⚠ Hutang';
-                            statusCell.className = `badge-status badge-${data.status.toLowerCase()} status-cell-${activeBayarId}`;
+                            statusCell.className   = `badge-status badge-${data.status.toLowerCase()} status-cell-${activeBayarId}`;
                         }
                         if (data.status === 'Lunas') {
                             const btn = document.querySelector(`#row-${activeBayarId} .btn-bayar`);
@@ -692,51 +733,26 @@ $stokTipis = mysqli_query($conn, "SELECT * FROM obat WHERE stok < stok_minimum O
         }
 
         // ── Modal helpers ──
-        function openModal(id) {
-            document.getElementById(id).classList.add('show');
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('show');
-        }
+        function openModal(id)  { document.getElementById(id).classList.add('show');    }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
         // ── Toast ──
         function showToast(msg, error = false) {
             const t = document.getElementById('toast');
-            t.innerHTML = `<i class="fas fa-${error ? 'exclamation-circle' : 'check-circle'}"></i> ${msg}`;
-            t.className = 'toast show' + (error ? ' error' : '');
+            t.innerHTML   = `<i class="fas fa-${error ? 'exclamation-circle' : 'check-circle'}"></i> ${msg}`;
+            t.className   = 'toast show' + (error ? ' error' : '');
             setTimeout(() => t.className = 'toast', 2800);
         }
 
         // ── Dropdown user ──
         function toggleDropdown() {
-            var menu = document.getElementById('ddmenu');
+            const menu = document.getElementById('ddmenu');
             menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
         }
         document.addEventListener('click', function(e) {
-            var wrap = document.getElementById('ddwrap');
-            if (wrap && !wrap.contains(e.target)) {
-                document.getElementById('ddmenu').style.display = 'none';
-            }
+            const wrap = document.getElementById('ddwrap');
+            if (wrap && !wrap.contains(e.target)) document.getElementById('ddmenu').style.display = 'none';
         });
-
-        function generateBatch() {
-            if (ownerMode) return;
-
-            const obat = document.getElementById('f-obat').value;
-
-            if (!obat) {
-                document.getElementById('f-batch').value = '';
-                return;
-            }
-
-            fetch("pembelian.php?get_batch=1&id_obat=" + obat)
-                .then(res => res.json())
-                .then(data => {
-                    document.getElementById('f-batch').value = data.batch;
-                });
-
-        }
     </script>
 
 </body>

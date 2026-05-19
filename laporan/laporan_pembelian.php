@@ -117,6 +117,7 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -129,6 +130,7 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
+
 <body>
 
     <nav class="topnav">
@@ -158,27 +160,33 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
     </nav>
 
     <div class="app-body">
+        <!-- SIDEBAR -->
         <aside class="sidebar">
-          <div class="sb-sec">Core</div>
+            <div class="sb-sec">Core</div>
             <a class="sb-link" href="../dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <div class="sb-sec">Master Data</div>
-            <a class="sb-link" href="kategori.php"><i class="fas fa-tags"></i> Kategori</a>
+            <a class="sb-link" href="../master/kategori.php"><i class="fas fa-tags"></i> Kategori</a>
             <?php if ($user['role'] != 'kasir'): ?>
-            <a class="sb-link" href="supplier.php"><i class="fas fa-truck"></i> Supplier</a>
+                <a class="sb-link" href="../master/supplier.php"><i class="fas fa-truck"></i> Supplier</a>
             <?php endif; ?>
-            <a class="sb-link" href="obat.php"><i class="fas fa-pills"></i> Obat</a>
-            <a class="sb-link" href="member.php"><i class="fas fa-user-friends"></i> Member</a>
+            <a class="sb-link" href="../master/obat.php"><i class="fas fa-pills"></i> Obat</a>
+            <a class="sb-link" href="../master/member.php"><i class="fas fa-user-friends"></i> Member</a>
             <?php if ($user['role'] == 'owner'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
-            <div class="sb-sec">Laporan</div>
-            <a class="sb-link" href="../laporan/laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
-            <a class="sb-link active" href="../laporan/laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
-            <a class="sb-link" href="../laporan/laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="../transaksi/pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
+                <div class="sb-sec">Laporan</div>
+                <a class="sb-link" href="laporan_penjualan.php"><i class="fas fa-chart-line"></i> Penjualan</a>
+                <a class="sb-link active" href="laporan_pembelian.php"><i class="fas fa-chart-bar"></i> Pembelian</a>
+                <a class="sb-link" href="laporan_stok.php"><i class="fas fa-boxes"></i> Stok</a>
+            <?php elseif ($user['role'] == 'admin'): ?>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/pembelian.php"><i class="fas fa-shopping-bag"></i> Pembelian</a>
             <?php elseif ($user['role'] == 'kasir'): ?>
-            <div class="sb-sec">Transaksi</div>
-            <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <div class="sb-sec">Transaksi</div>
+                <a class="sb-link" href="../transaksi/penjualan.php"><i class="fas fa-cash-register"></i> Penjualan</a>
+                <a class="sb-link" href="../transaksi/pesanan.php"><i class="fas fa-box"></i> Pesanan</a>
             <?php endif; ?>
             <div class="sb-footer">
                 <div class="small">Masuk sebagai</div>
@@ -186,7 +194,7 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
             </div>
         </aside>
 
-        <div class="main-content">
+        <div class="main-content" style="padding: 24px; gap: 20px;">
 
             <!-- Print Header (hanya muncul saat print via printRapi) -->
             <div class="print-header">
@@ -254,12 +262,12 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
                                 onchange="document.getElementById('ff').submit()">
                         </div>
                         <div class="toolbar-right">
-                            <input type="date" name="tanggal_awal"  class="date-inp" value="<?= htmlspecialchars($tanggal_awal) ?>"  title="Dari tanggal">
+                            <input type="date" name="tanggal_awal" class="date-inp" value="<?= htmlspecialchars($tanggal_awal) ?>" title="Dari tanggal">
                             <span style="color:var(--muted);font-size:13px">s/d</span>
                             <input type="date" name="tanggal_akhir" class="date-inp" value="<?= htmlspecialchars($tanggal_akhir) ?>" title="Sampai tanggal">
                             <select name="status" class="select-sm" onchange="document.getElementById('ff').submit()">
                                 <option value="">Semua Status</option>
-                                <option value="Lunas"  <?= $filter_status === 'Lunas'  ? 'selected' : '' ?>>Lunas</option>
+                                <option value="Lunas" <?= $filter_status === 'Lunas'  ? 'selected' : '' ?>>Lunas</option>
                                 <option value="Hutang" <?= $filter_status === 'Hutang' ? 'selected' : '' ?>>Hutang</option>
                             </select>
                             <button type="submit" class="btn-action" style="border-color:var(--green);color:var(--green)">
@@ -334,13 +342,13 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
                 </div>
 
                 <div class="table-footer">
-                    <p>Menampilkan <?= $totalRow ? (($page-1)*$perPage+1) : 0 ?>–<?= min($page*$perPage, $totalRow) ?> dari <?= $totalRow ?> data</p>
+                    <p>Menampilkan <?= $totalRow ? (($page - 1) * $perPage + 1) : 0 ?>–<?= min($page * $perPage, $totalRow) ?> dari <?= $totalRow ?> data</p>
                     <div class="pagination no-print">
-                        <button class="btn-page" <?= $page<=1 ? 'disabled' : '' ?> onclick="goPage(<?= $page-1 ?>)">← Prev</button>
-                        <?php for ($p = max(1,$page-2); $p <= min($totalPage, max(1,$page-2)+4); $p++): ?>
-                            <button class="btn-page <?= $p==$page ? 'active' : '' ?>" onclick="goPage(<?= $p ?>)"><?= $p ?></button>
+                        <button class="btn-page" <?= $page <= 1 ? 'disabled' : '' ?> onclick="goPage(<?= $page - 1 ?>)">← Prev</button>
+                        <?php for ($p = max(1, $page - 2); $p <= min($totalPage, max(1, $page - 2) + 4); $p++): ?>
+                            <button class="btn-page <?= $p == $page ? 'active' : '' ?>" onclick="goPage(<?= $p ?>)"><?= $p ?></button>
                         <?php endfor; ?>
-                        <button class="btn-page" <?= $page>=$totalPage ? 'disabled' : '' ?> onclick="goPage(<?= $page+1 ?>)">Next →</button>
+                        <button class="btn-page" <?= $page >= $totalPage ? 'disabled' : '' ?> onclick="goPage(<?= $page + 1 ?>)">Next →</button>
                     </div>
                 </div>
             </div>
@@ -372,7 +380,7 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
             </div>
             <div class="modal-footer">
                 <button class="modal-btn secondary" onclick="closeModal()">Batal</button>
-                <button class="modal-btn primary"   onclick="submitBayar()">
+                <button class="modal-btn primary" onclick="submitBayar()">
                     <i class="fas fa-check"></i> Konfirmasi Bayar
                 </button>
             </div>
@@ -384,13 +392,13 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
     <script>
         const allRows = <?= json_encode($allRows) ?>;
         const summaryData = {
-            jumlah:       <?= (int)$summary['jumlah'] ?>,
-            total_semua:  <?= (float)$summary['total_semua'] ?>,
+            jumlah: <?= (int)$summary['jumlah'] ?>,
+            total_semua: <?= (float)$summary['total_semua'] ?>,
             total_hutang: <?= (float)$summary['total_hutang'] ?>
         };
         const periodeLabel = `<?= ($tanggal_awal && $tanggal_akhir)
-            ? date('d M Y', strtotime($tanggal_awal)) . ' s/d ' . date('d M Y', strtotime($tanggal_akhir))
-            : 'Semua Periode' ?>`;
+                                    ? date('d M Y', strtotime($tanggal_awal)) . ' s/d ' . date('d M Y', strtotime($tanggal_akhir))
+                                    : 'Semua Periode' ?>`;
 
         // ── Pagination ──
         function goPage(p) {
@@ -400,10 +408,11 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
         }
 
         // ── Bayar Hutang ──
-        let activeBayarId = null, activeBayarSisa = 0;
+        let activeBayarId = null,
+            activeBayarSisa = 0;
 
         function openBayarModal(id, nama, sisa) {
-            activeBayarId   = id;
+            activeBayarId = id;
             activeBayarSisa = sisa;
             document.getElementById('modal-nama-obat').textContent = nama;
             document.getElementById('modal-sisa-text').textContent = 'Rp ' + Number(sisa).toLocaleString('id-ID');
@@ -412,7 +421,9 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
             document.getElementById('modal-bayar').classList.add('show');
         }
 
-        function closeModal() { document.getElementById('modal-bayar').classList.remove('show'); }
+        function closeModal() {
+            document.getElementById('modal-bayar').classList.remove('show');
+        }
 
         document.getElementById('modal-bayar').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
@@ -421,40 +432,48 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
         function previewBayar() {
             const bayar = parseFloat(document.getElementById('input-bayar').value) || 0;
             const after = activeBayarSisa - bayar;
-            const el    = document.getElementById('modal-sisa-preview');
-            const afEl  = document.getElementById('modal-sisa-after');
+            const el = document.getElementById('modal-sisa-preview');
+            const afEl = document.getElementById('modal-sisa-after');
             if (bayar > 0) {
-                el.style.display    = 'flex';
-                afEl.textContent    = after <= 0 ? '✓ Lunas' : 'Rp ' + Number(after).toLocaleString('id-ID');
-                afEl.style.color    = after <= 0 ? 'var(--green)' : 'var(--amber)';
-            } else { el.style.display = 'none'; }
+                el.style.display = 'flex';
+                afEl.textContent = after <= 0 ? '✓ Lunas' : 'Rp ' + Number(after).toLocaleString('id-ID');
+                afEl.style.color = after <= 0 ? 'var(--green)' : 'var(--amber)';
+            } else {
+                el.style.display = 'none';
+            }
         }
 
         function submitBayar() {
             const bayar = parseFloat(document.getElementById('input-bayar').value) || 0;
-            if (!bayar || bayar <= 0) { showToast('Masukkan jumlah pembayaran!', true); return; }
+            if (!bayar || bayar <= 0) {
+                showToast('Masukkan jumlah pembayaran!', true);
+                return;
+            }
             const fd = new FormData();
             fd.append('ajax_bayar', '1');
             fd.append('id_pembelian', activeBayarId);
             fd.append('bayar_tambah', bayar);
-            fetch(window.location.href, { method:'POST', body:fd })
+            fetch(window.location.href, {
+                    method: 'POST',
+                    body: fd
+                })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
                         closeModal();
                         const row = document.getElementById('row-' + activeBayarId);
                         if (row) {
-                            const sisaTd  = row.querySelector('.sisa-cell');
+                            const sisaTd = row.querySelector('.sisa-cell');
                             const badgeTd = row.querySelector('.badge-cell');
                             if (sisaTd) {
-                                sisaTd.textContent   = 'Rp ' + Number(data.sisa_baru).toLocaleString('id-ID');
-                                sisaTd.style.color      = data.status === 'Lunas' ? 'var(--muted)' : 'var(--red)';
+                                sisaTd.textContent = 'Rp ' + Number(data.sisa_baru).toLocaleString('id-ID');
+                                sisaTd.style.color = data.status === 'Lunas' ? 'var(--muted)' : 'var(--red)';
                                 sisaTd.style.fontWeight = data.status === 'Lunas' ? 'normal' : '700';
                             }
                             if (badgeTd) {
-                                badgeTd.innerHTML = data.status === 'Lunas'
-                                    ? '<span class="badge-lunas"><i class="fas fa-check"></i> Lunas</span>'
-                                    : '<span class="badge-hutang"><i class="fas fa-exclamation"></i> Hutang</span>';
+                                badgeTd.innerHTML = data.status === 'Lunas' ?
+                                    '<span class="badge-lunas"><i class="fas fa-check"></i> Lunas</span>' :
+                                    '<span class="badge-hutang"><i class="fas fa-exclamation"></i> Hutang</span>';
                             }
                         }
                         showToast('Pembayaran berhasil dicatat!');
@@ -469,9 +488,9 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
         // Membuka jendela HTML bersih (tanpa sidebar/nav) lalu auto-print
         function printRapi() {
             const printHeader = document.querySelector('.print-header')?.outerHTML ?? '';
-            const pageHeader  = document.querySelector('.page-header')?.outerHTML  ?? '';
+            const pageHeader = document.querySelector('.page-header')?.outerHTML ?? '';
             const summaryGrid = document.querySelector('.summary-grid')?.outerHTML ?? '';
-            const tableHTML   = document.querySelector('.table-card table')?.outerHTML ?? '';
+            const tableHTML = document.querySelector('.table-card table')?.outerHTML ?? '';
 
             const html = `<!DOCTYPE html>
 <html lang="id">
@@ -608,22 +627,36 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
 
         // ── Export PDF ──
         function exportPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const {
+                jsPDF
+            } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
 
-            doc.setFontSize(16); doc.setFont('helvetica','bold');
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
             doc.text('APOTEK — Laporan Pembelian', 14, 16);
-            doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(100);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100);
             doc.text(`Periode: ${periodeLabel}`, 14, 23);
             doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}`, 14, 29);
-            doc.setTextColor(0); doc.setFont('helvetica','bold');
+            doc.setTextColor(0);
+            doc.setFont('helvetica', 'bold');
             doc.text(`Total Transaksi: ${summaryData.jumlah}`, 14, 38);
             doc.text(`Total Pembelian: Rp ${fmt(summaryData.total_semua)}`, 80, 38);
             doc.text(`Total Hutang: Rp ${fmt(summaryData.total_hutang)}`, 180, 38);
 
             const tableData = allRows.map((row, i) => [
                 i + 1,
-                new Date(row.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}),
+                new Date(row.tanggal).toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }),
                 row.nama_supplier || '—', row.nama_obat || '—', row.batch || '—',
                 `${Number(row.jumlah).toLocaleString('id-ID')} pcs`,
                 `Rp ${fmt(row.total)}`, `Rp ${fmt(row.dibayar)}`, `Rp ${fmt(row.sisa)}`,
@@ -631,23 +664,76 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
             ]);
 
             doc.autoTable({
-                head: [['No','Tanggal','Supplier','Obat','Batch','Jumlah','Total','Dibayar','Sisa','Status']],
+                head: [
+                    ['No', 'Tanggal', 'Supplier', 'Obat', 'Batch', 'Jumlah', 'Total', 'Dibayar', 'Sisa', 'Status']
+                ],
                 body: tableData,
                 startY: 44,
-                styles: { fontSize: 9, cellPadding: 3 },
-                headStyles: { fillColor: [45,106,79], textColor: 255, fontStyle: 'bold' },
-                alternateRowStyles: { fillColor: [244,246,243] },
-                columnStyles: {
-                    0:{halign:'center',cellWidth:10},
-                    5:{halign:'right'}, 6:{halign:'right',fontStyle:'bold'},
-                    7:{halign:'right'}, 8:{halign:'right'}, 9:{halign:'center'}
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 3
                 },
-                foot: [[
-                    {content:'TOTAL',colSpan:6,styles:{halign:'right',fontStyle:'bold',fillColor:[216,243,220]}},
-                    {content:`Rp ${fmt(summaryData.total_semua)}`,styles:{halign:'right',fontStyle:'bold',fillColor:[216,243,220]}},
-                    {content:'',colSpan:3,styles:{fillColor:[216,243,220]}}
-                ]],
-                footStyles: { fillColor:[216,243,220], textColor:[45,106,79] }
+                headStyles: {
+                    fillColor: [45, 106, 79],
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                alternateRowStyles: {
+                    fillColor: [244, 246, 243]
+                },
+                columnStyles: {
+                    0: {
+                        halign: 'center',
+                        cellWidth: 10
+                    },
+                    5: {
+                        halign: 'right'
+                    },
+                    6: {
+                        halign: 'right',
+                        fontStyle: 'bold'
+                    },
+                    7: {
+                        halign: 'right'
+                    },
+                    8: {
+                        halign: 'right'
+                    },
+                    9: {
+                        halign: 'center'
+                    }
+                },
+                foot: [
+                    [{
+                            content: 'TOTAL',
+                            colSpan: 6,
+                            styles: {
+                                halign: 'right',
+                                fontStyle: 'bold',
+                                fillColor: [216, 243, 220]
+                            }
+                        },
+                        {
+                            content: `Rp ${fmt(summaryData.total_semua)}`,
+                            styles: {
+                                halign: 'right',
+                                fontStyle: 'bold',
+                                fillColor: [216, 243, 220]
+                            }
+                        },
+                        {
+                            content: '',
+                            colSpan: 3,
+                            styles: {
+                                fillColor: [216, 243, 220]
+                            }
+                        }
+                    ]
+                ],
+                footStyles: {
+                    fillColor: [216, 243, 220],
+                    textColor: [45, 106, 79]
+                }
             });
 
             doc.save(`laporan_pembelian_${new Date().toISOString().slice(0,10)}.pdf`);
@@ -656,22 +742,26 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
 
         // ── Export CSV ──
         function exportCSV() {
-            const headers = ['No','Tanggal','Supplier','Obat','Batch','Jumlah','Total','Dibayar','Sisa','Status'];
+            const headers = ['No', 'Tanggal', 'Supplier', 'Obat', 'Batch', 'Jumlah', 'Total', 'Dibayar', 'Sisa', 'Status'];
             const csvRows = allRows.map((row, i) => [
-                i+1, new Date(row.tanggal).toLocaleDateString('id-ID'),
-                row.nama_supplier||'—', row.nama_obat||'—', row.batch||'—',
-                row.jumlah+' pcs', row.total, row.dibayar, row.sisa, row.status_pembayaran
+                i + 1, new Date(row.tanggal).toLocaleDateString('id-ID'),
+                row.nama_supplier || '—', row.nama_obat || '—', row.batch || '—',
+                row.jumlah + ' pcs', row.total, row.dibayar, row.sisa, row.status_pembayaran
             ]);
-            csvRows.push(['','','','','','TOTAL', summaryData.total_semua,'','','']);
-            const csv = [headers,...csvRows].map(r => r.map(c=>`"${c}"`).join(',')).join('\n');
+            csvRows.push(['', '', '', '', '', 'TOTAL', summaryData.total_semua, '', '', '']);
+            const csv = [headers, ...csvRows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+            a.href = URL.createObjectURL(new Blob([csv], {
+                type: 'text/csv;charset=utf-8;'
+            }));
             a.download = `laporan_pembelian_${new Date().toISOString().slice(0,10)}.csv`;
             a.click();
             showToast('CSV berhasil didownload!');
         }
 
-        function fmt(n) { return Number(n).toLocaleString('id-ID'); }
+        function fmt(n) {
+            return Number(n).toLocaleString('id-ID');
+        }
 
         function showToast(msg, error = false) {
             const t = document.getElementById('toast');
@@ -690,4 +780,5 @@ while ($row = mysqli_fetch_assoc($queryAll)) $allRows[] = $row;
         });
     </script>
 </body>
+
 </html>
