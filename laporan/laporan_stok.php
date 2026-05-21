@@ -2,7 +2,7 @@
 session_start();
 require_once "../koneksi.php";
 mysqli_set_charset($conn, 'utf8mb4');
-mysqli_query($conn, "SET NAMES utf8mb4 COLLATE utf8mb4_0900_ai_ci");
+mysqli_query($conn, "SET NAMES utf8mb4");
 // Nonaktifkan strict mode agar '0000-00-00' tidak error
 mysqli_query($conn, "SET SESSION sql_mode = ''");
 
@@ -70,7 +70,11 @@ $allQ = mysqli_query($conn, "
     LEFT JOIN obat o ON o.nama_obat = v.nama_obat
     $where
     ORDER BY v.tahun DESC,
-             FIELD(v.bulan,'Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des') DESC,
+             FIELD(
+                v.bulan COLLATE utf8mb4_general_ci,
+                'Jan','Feb','Mar','Apr','Mei','Jun',
+                'Jul','Agu','Sep','Okt','Nov','Des'
+             ) DESC,
              v.nama_obat ASC
 ");
 $allRows = [];
